@@ -1,0 +1,28 @@
+{
+  "name": "claimguard-ai",
+  "private": true,
+  "scripts": {
+    "build": "npm run build --workspace=@claimguard/shared-types && npm run build --workspace=web",
+    "predev": "node scripts/prepare-dev.mjs",
+    "dev": "concurrently -n api,web -c blue,green \"npm run dev:api\" \"npm run dev:web\"",
+    "dev:api": "cd apps/api && python -m uvicorn app.main:app --reload --host 127.0.0.1 --port 4001",
+    "dev:web": "npm run dev --workspace=web",
+    "postinstall": "npm run build --workspace=@claimguard/shared-types",
+    "lint": "npm run lint --workspace=web",
+    "check-types": "npm run check-types --workspace=@claimguard/shared-types",
+    "clean": "node scripts/clean-dev-cache.mjs",
+    "format": "prettier --write \"**/*.{ts,tsx,md}\""
+  },
+  "devDependencies": {
+    "concurrently": "^9.1.2",
+    "prettier": "^3.7.4",
+    "typescript": "5.9.2"
+  },
+  "engines": {
+    "node": ">=18"
+  },
+  "workspaces": [
+    "apps/*",
+    "packages/*"
+  ]
+}

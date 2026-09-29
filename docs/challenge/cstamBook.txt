@@ -1,0 +1,170 @@
+NOTE: Canonical formatted copy lives in docs/challenge/CSTAM_VELODOC_BRIEF.md
+
+Challenge Title: ClaimGuard AI: Trustworthy
+Agentic Copilot for Healthcare Claim
+Pre-Validation
+Challenge Reference: CSTAM-VELODOC
+Company Collaborator: Velodoc Amazit
+Assigned Mentor:
+- Dr. Wael Hilali - Velodoc CTO
+- Mr. Bilel Said - Velodoc CEO
+1. Company Introduction &
+Challenge Context
+Velodoc (by Amazit – FZCO) operates in the
+HealthTech & AI Solutions sector, specializing
+in AI-driven healthcare operational
+automation, claims workflow simplification,
+and administrative intelligence. To drive
+digital transformation and address
+emerging challenges, the company
+continuously explores innovations in Agentic
+AI & LLM Systems, Healthcare Interoperability
+(HL7 FHIR R4), and Cybersecurity, Privacy &
+Auditability.
+In today
+'
+s rapidly evolving landscape, where
+
+human-in-the-loop AI automation and real-
+time administrative validation is increasingly
+
+critical, we currently rely on manual claim
+review processes and rigid, traditional rule
+scripts. However, as our operations scale, we
+are actively seeking innovative approaches
+to automate pre-validation of healthcare
+claim packages, drastically reduce
+rejections and processing delays, and
+maintain total transparency, privacy, and
+auditability.
+
+2. Problem Statement
+
+To design, prototype, and demonstrate a
+human-supervised Agentic AI Copilot
+system that ingests synthetic healthcare
+claim packages, detects administrative risks
+and policy inconsistencies, generates
+human-understandable explanations and
+recommendations, and logs all actions for
+auditability.
+Our main challenge is that healthcare
+claims are frequently delayed or rejected
+because administrative information is
+incomplete, inconsistent, duplicated, or
+unsupported at the point of submission.
+When high-volume synthetic claim
+packages with complex coverage rules,
+missing attachments, or data anomalies are
+submitted, our systems experience
+administrative bottlenecks, operational
+delays, and high denial rates. We require a
+robust solution capable of automatically
+and securely handling claim pre-validation,
+rule-linked evidence explanation, corrective
+action recommendations, and human
+escalation routing without disrupting
+existing administrative infrastructure or
+making unauthorized clinical decisions.
+3. Technical Mission
+
+Participating teams must build a system
+evaluated across the following core phases:
+Challenge Objective:
+
+Total score: 50 points
+Required Features:
+
+Data Ingestion & Normalization
+[15 Points]: Ingest synthetic claim
+packages (FHIR R4 JSON / CSV)
+containing patient, encounter, coverage,
+provider, diagnosis, and claim line items,
+and normalize them into a consistent
+internal representation.
+Deterministic & AI Rule Engine
+[15 Points]: Implement an automated
+validation engine executing against the
+fictional payer-rule catalogue (10-15
+rules) to detect missing, inconsistent,
+duplicate, or unsupported data.
+Explainability & Structured Output
+[10 Points]: Generate structured,
+machine-readable validation findings
+containing Claim ID, Rule ID, rule-linked
+evidence, severity level, confidence
+score, and suggested corrective action.
+Audit Log Engine [10 Points]:
+Systematically record an auditable,
+immutable log of all checks, AI
+recommendations, confidence scores,
+and system decisions.
+Required Deliverables :
+Source Architecture Diagram & Data
+Flow Documentation.
+A short video demonstration of the MVP.
+Code repository with clear installation
+and execution instructions.
+
+Phase 2: Integration & Testing
+Total score: 30 Points
+Required Features:
+Detection Quality & Benchmark
+Performance[15 Points]: Evaluate
+system performance on the validation
+dataset (50 claims) achieving high
+Macro F1 score across rule categories
+and preserving valid claims (low false-
+positive rate).
+Human-in-the-Loop & Escalation Logic
+[10 Points]: Implement reviewer-facing
+routing that flags low-confidence or
+high-severity cases for explicit human
+approval, allowing manual overrides
+and feedback logging.
+Privacy, Security & Safety Guards
+[5 Points]: Implement data
+minimization, access control, prompt
+/data security guards (preventing
+hallucinated clinical advice), and
+graceful error handling for malformed
+FHIR inputs.
+Required Deliverables :
+Test evaluation report (detection
+metrics, F1 score, false positive rate,
+latency, and limitations).
+Privacy and Security note (threat model,
+access control, least privilege, and
+auditability).
+
+Optional Advanced Features
+Bonus Points
+Multi-Format Attachment Parsing
+(OCR/RAG for PDF clinical notes)
+[2 Points]
+Dynamic Payer-Rule Management
+GUI/API [2 Points]
+Active Learning Feedback Loop from
+Human Overrides [2 Points]
+Cryptographic / Local Ledger Audit Log
+Security [2 Points]
+Real-Time Async Streaming REST /
+WebSocket API [2 Points]
+
+4. Recommended Skills
+While you are highly encouraged to
+innovate and bring your own ideas to the
+table, your team will have a strong head
+start if you are familiar with:
+Software & Frameworks: Python,
+LangChain / LangGraph, AutoGen /
+CrewAI, FastAPI / Flask, React / Next.js,
+Docker
+Protocols & Standards: REST APIs,
+WebSockets, JSON/JSON-LD, FHIR / HL7
+(Optional)
+AI & Security: Prompt Engineering,
+Retrieval-Augmented Generation (RAG),
+PII Anonymization, Role-Based Access
+Control (RBAC)
+
