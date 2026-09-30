@@ -1,0 +1,117 @@
+{
+  "resourceType": "Bundle",
+  "type": "collection",
+  "entry": [
+    {
+      "resource": {
+        "resourceType": "Patient",
+        "id": "P9",
+        "gender": "male",
+        "birthDate": "1978-11-03"
+      }
+    },
+    {
+      "resource": {
+        "resourceType": "Encounter",
+        "id": "E9",
+        "status": "finished",
+        "period": {
+          "start": "2026-06-10T08:00:00Z",
+          "end": "2026-06-10T08:45:00Z"
+        }
+      }
+    },
+    {
+      "resource": {
+        "resourceType": "Practitioner",
+        "id": "PRV-9",
+        "identifier": [
+          {
+            "system": "http://hl7.org/fhir/sid/us-npi",
+            "value": "1999999999"
+          }
+        ]
+      }
+    },
+    {
+      "resource": {
+        "resourceType": "Coverage",
+        "id": "COV-9",
+        "status": "active",
+        "identifier": [
+          {
+            "value": "POL-9"
+          }
+        ],
+        "payor": [
+          {
+            "reference": "Organization/PAYER-A"
+          }
+        ],
+        "period": {
+          "start": "2026-01-01",
+          "end": "2026-12-31"
+        }
+      }
+    },
+    {
+      "resource": {
+        "resourceType": "Claim",
+        "id": "F9",
+        "status": "active",
+        "patient": {
+          "reference": "Patient/P9"
+        },
+        "provider": {
+          "reference": "Practitioner/PRV-9"
+        },
+        "insurance": [
+          {
+            "sequence": 1,
+            "focal": true,
+            "coverage": {
+              "reference": "Coverage/COV-9"
+            },
+            "preAuthRef": [
+              "AUTH-9"
+            ]
+          }
+        ],
+        "diagnosis": [
+          {
+            "sequence": 1,
+            "diagnosisCodeableConcept": {
+              "coding": [
+                {
+                  "code": "i10"
+                }
+              ]
+            }
+          }
+        ],
+        "item": [
+          {
+            "sequence": 1,
+            "encounter": [
+              {
+                "reference": "Encounter/E9"
+              }
+            ],
+            "productOrService": {
+              "coding": [
+                {
+                  "code": "99214"
+                }
+              ]
+            },
+            "servicedDate": "2026-06-10",
+            "quantity": {
+              "value": 1
+            },
+            "net": "150"
+          }
+        ]
+      }
+    }
+  ]
+}

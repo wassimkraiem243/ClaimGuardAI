@@ -1,0 +1,125 @@
+{
+  "resourceType": "Bundle",
+  "type": "collection",
+  "entry": [
+    {
+      "resource": {
+        "resourceType": "Patient",
+        "id": "P2",
+        "gender": "male",
+        "birthDate": "1978-11-03"
+      },
+      "fullUrl": "urn:uuid:patient-P2"
+    },
+    {
+      "resource": {
+        "resourceType": "Encounter",
+        "id": "E2",
+        "status": "finished",
+        "period": {
+          "start": "2026-06-10T08:00:00Z",
+          "end": "2026-06-10T08:45:00Z"
+        }
+      },
+      "fullUrl": "urn:uuid:encounter-E2"
+    },
+    {
+      "resource": {
+        "resourceType": "Practitioner",
+        "id": "PRV-2",
+        "identifier": [
+          {
+            "system": "http://hl7.org/fhir/sid/us-npi",
+            "value": "1999999999"
+          }
+        ]
+      },
+      "fullUrl": "urn:uuid:practitioner-PRV-2"
+    },
+    {
+      "resource": {
+        "resourceType": "Coverage",
+        "id": "COV-2",
+        "status": "active",
+        "identifier": [
+          {
+            "value": "POL-2"
+          }
+        ],
+        "payor": [
+          {
+            "reference": "Organization/PAYER-A"
+          }
+        ],
+        "period": {
+          "start": "2026-01-01",
+          "end": "2026-12-31"
+        }
+      },
+      "fullUrl": "urn:uuid:coverage-COV-2"
+    },
+    {
+      "resource": {
+        "resourceType": "Claim",
+        "id": "F2",
+        "status": "active",
+        "patient": {
+          "reference": "urn:uuid:patient-P2"
+        },
+        "provider": {
+          "reference": "urn:uuid:practitioner-PRV-2"
+        },
+        "insurance": [
+          {
+            "sequence": 1,
+            "focal": true,
+            "coverage": {
+              "reference": "urn:uuid:coverage-COV-2"
+            },
+            "preAuthRef": [
+              "AUTH-9"
+            ]
+          }
+        ],
+        "diagnosis": [
+          {
+            "sequence": 1,
+            "diagnosisCodeableConcept": {
+              "coding": [
+                {
+                  "code": "i10"
+                }
+              ]
+            }
+          }
+        ],
+        "item": [
+          {
+            "sequence": 1,
+            "encounter": [
+              {
+                "reference": "urn:uuid:encounter-E2"
+              }
+            ],
+            "productOrService": {
+              "coding": [
+                {
+                  "code": "99214"
+                }
+              ]
+            },
+            "servicedDate": "2026-06-10",
+            "quantity": {
+              "value": 1
+            },
+            "net": {
+              "value": 150,
+              "currency": "USD"
+            }
+          }
+        ]
+      },
+      "fullUrl": "urn:uuid:claim-F2"
+    }
+  ]
+}

@@ -1,0 +1,120 @@
+{
+  "resourceType": "Bundle",
+  "type": "collection",
+  "entry": [
+    {
+      "resource": {
+        "resourceType": "Encounter",
+        "id": "E3",
+        "status": "finished",
+        "period": {
+          "start": "2026-06-10T08:00:00Z",
+          "end": "2026-06-10T08:45:00Z"
+        }
+      }
+    },
+    {
+      "resource": {
+        "resourceType": "Practitioner",
+        "id": "PRV-3",
+        "identifier": [
+          {
+            "system": "http://hl7.org/fhir/sid/us-npi",
+            "value": "1999999999"
+          }
+        ]
+      }
+    },
+    {
+      "resource": {
+        "resourceType": "Coverage",
+        "id": "COV-3",
+        "status": "active",
+        "identifier": [
+          {
+            "value": "POL-3"
+          }
+        ],
+        "payor": [
+          {
+            "reference": "Organization/PAYER-A"
+          }
+        ],
+        "period": {
+          "start": "2026-01-01",
+          "end": "2026-12-31"
+        }
+      }
+    },
+    {
+      "resource": {
+        "resourceType": "Claim",
+        "id": "F3",
+        "status": "active",
+        "patient": {
+          "reference": "#P3"
+        },
+        "provider": {
+          "reference": "Practitioner/PRV-3"
+        },
+        "insurance": [
+          {
+            "sequence": 1,
+            "focal": true,
+            "coverage": {
+              "reference": "Coverage/COV-3"
+            },
+            "preAuthRef": [
+              "AUTH-9"
+            ]
+          }
+        ],
+        "diagnosis": [
+          {
+            "sequence": 1,
+            "diagnosisCodeableConcept": {
+              "coding": [
+                {
+                  "code": "i10"
+                }
+              ]
+            }
+          }
+        ],
+        "item": [
+          {
+            "sequence": 1,
+            "encounter": [
+              {
+                "reference": "Encounter/E3"
+              }
+            ],
+            "productOrService": {
+              "coding": [
+                {
+                  "code": "99214"
+                }
+              ]
+            },
+            "servicedDate": "2026-06-10",
+            "quantity": {
+              "value": 1
+            },
+            "net": {
+              "value": 150,
+              "currency": "USD"
+            }
+          }
+        ],
+        "contained": [
+          {
+            "resourceType": "Patient",
+            "id": "P3",
+            "gender": "male",
+            "birthDate": "1978-11-03"
+          }
+        ]
+      }
+    }
+  ]
+}

@@ -1,0 +1,142 @@
+{
+  "resourceType": "Bundle",
+  "type": "collection",
+  "entry": [
+    {
+      "resource": {
+        "resourceType": "Patient",
+        "id": "P7",
+        "gender": "male",
+        "birthDate": "1978-11-03"
+      }
+    },
+    {
+      "resource": {
+        "resourceType": "Encounter",
+        "id": "E7",
+        "status": "finished",
+        "period": {
+          "start": "2026-06-10T08:00:00Z",
+          "end": "2026-06-10T08:45:00Z"
+        }
+      }
+    },
+    {
+      "resource": {
+        "resourceType": "Practitioner",
+        "id": "PRV-7",
+        "identifier": [
+          {
+            "system": "http://hl7.org/fhir/sid/us-npi",
+            "value": "1999999999"
+          }
+        ]
+      }
+    },
+    {
+      "resource": {
+        "resourceType": "Coverage",
+        "id": "COV-7",
+        "status": "active",
+        "identifier": [
+          {
+            "value": "POL-7"
+          }
+        ],
+        "payor": [
+          {
+            "reference": "Organization/PAYER-A"
+          }
+        ],
+        "period": {
+          "start": "2026-01-01",
+          "end": "2026-12-31"
+        }
+      }
+    },
+    {
+      "resource": {
+        "resourceType": "Claim",
+        "id": "F7",
+        "status": "active",
+        "patient": {
+          "reference": "Patient/P7"
+        },
+        "provider": {
+          "reference": "Practitioner/PRV-7"
+        },
+        "insurance": [
+          {
+            "sequence": 1,
+            "focal": true,
+            "coverage": {
+              "reference": "Coverage/COV-7"
+            },
+            "preAuthRef": [
+              "AUTH-9"
+            ]
+          }
+        ],
+        "diagnosis": [
+          {
+            "sequence": 1,
+            "diagnosisCodeableConcept": {
+              "coding": [
+                {
+                  "code": "r05"
+                }
+              ]
+            }
+          },
+          {
+            "sequence": 2,
+            "type": [
+              {
+                "coding": [
+                  {
+                    "code": "principal"
+                  }
+                ]
+              }
+            ],
+            "diagnosisCodeableConcept": {
+              "coding": [
+                {
+                  "code": "j45.0"
+                }
+              ]
+            }
+          }
+        ],
+        "item": [
+          {
+            "sequence": 1,
+            "encounter": [
+              {
+                "reference": "Encounter/E7"
+              }
+            ],
+            "productOrService": {
+              "coding": [
+                {
+                  "code": "99214"
+                }
+              ]
+            },
+            "quantity": {
+              "value": 1
+            },
+            "net": {
+              "value": 150,
+              "currency": "USD"
+            },
+            "servicedPeriod": {
+              "start": "2026-06-10T08:00:00Z",
+              "end": "2026-06-10T08:45:00Z"
+            }
+          }
+        ]
+      }
+    }
+  ]
+}

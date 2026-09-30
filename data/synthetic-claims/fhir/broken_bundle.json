@@ -1,0 +1,31 @@
+{
+  "resourceType": "Bundle",
+  "type": "collection",
+  "entry": [
+    {"resource": {"resourceType": "Patient", "id": "P001", "gender": "female", "birthDate": "1985-03-12"}},
+    {"resource": {"resourceType": "Encounter", "id": "E001", "status": "finished",
+      "period": {"start": "2026-05-02T09:00:00Z", "end": "2026-05-02T09:30:00Z"}}},
+    {"resource": {"resourceType": "Practitioner", "id": "PRV-9",
+      "identifier": [{"system": "http://hl7.org/fhir/sid/us-npi", "value": "1234567890"}]}},
+    {"resource": {"resourceType": "Coverage", "id": "COV-1", "status": "active",
+      "identifier": [{"value": "POL-77"}],
+      "payor": [{"reference": "Organization/PAYER-A"}],
+      "period": {"start": "2026-01-01", "end": "2026-12-31"}}},
+    {"resource": {"resourceType": "Claim", "id": "F001", "status": "active",
+      "patient": {"reference": "Patient/P999"},
+      "provider": {"reference": "Practitioner/PRV-9"},
+      "insurance": [{"sequence": 1, "focal": true, "coverage": {"reference": "Coverage/COV-1"}, "preAuthRef": ["AUTH-1"]}],
+      "diagnosis": [
+        {"sequence": 1, "diagnosisCodeableConcept": {"coding": [{"system": "http://hl7.org/fhir/sid/icd-10", "code": "j45.0"}]}},
+        {"sequence": 2, "diagnosisCodeableConcept": {"coding": [{"system": "http://hl7.org/fhir/sid/icd-10", "code": "r05"}]}}
+      ],
+      "item": [
+        {"sequence": 1, "encounter": [{"reference": "Encounter/E001"}],
+         "productOrService": {"coding": [{"code": "99213"}]}, "servicedDate": "2026-05-02",
+         "quantity": {"value": 1}, "net": {"value": 120.5, "currency": "USD"}},
+        {"sequence": 2, "encounter": [{"reference": "Encounter/E001"}],
+         "productOrService": {"coding": [{"code": "94010"}]}, "servicedDate": "2026-05-02",
+         "quantity": {"value": 1}, "net": {"value": 80, "currency": "USD"}}
+      ]}}
+  ]
+}

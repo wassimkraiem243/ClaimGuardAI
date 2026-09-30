@@ -1,0 +1,234 @@
+{
+  "resourceType": "Bundle",
+  "type": "collection",
+  "entry": [
+    {
+      "resource": {
+        "resourceType": "Patient",
+        "id": "P4",
+        "gender": "male",
+        "birthDate": "1978-11-03"
+      }
+    },
+    {
+      "resource": {
+        "resourceType": "Encounter",
+        "id": "E4",
+        "status": "finished",
+        "period": {
+          "start": "2026-06-10T08:00:00Z",
+          "end": "2026-06-10T08:45:00Z"
+        }
+      }
+    },
+    {
+      "resource": {
+        "resourceType": "Practitioner",
+        "id": "PRV-4",
+        "identifier": [
+          {
+            "system": "http://hl7.org/fhir/sid/us-npi",
+            "value": "1999999999"
+          }
+        ]
+      }
+    },
+    {
+      "resource": {
+        "resourceType": "Coverage",
+        "id": "COV-4",
+        "status": "active",
+        "identifier": [
+          {
+            "value": "POL-4"
+          }
+        ],
+        "payor": [
+          {
+            "reference": "Organization/PAYER-A"
+          }
+        ],
+        "period": {
+          "start": "2026-01-01",
+          "end": "2026-12-31"
+        }
+      }
+    },
+    {
+      "resource": {
+        "resourceType": "Claim",
+        "id": "F4",
+        "status": "active",
+        "patient": {
+          "reference": "Patient/P4"
+        },
+        "provider": {
+          "reference": "Practitioner/PRV-4"
+        },
+        "insurance": [
+          {
+            "sequence": 1,
+            "focal": true,
+            "coverage": {
+              "reference": "Coverage/COV-4"
+            },
+            "preAuthRef": [
+              "AUTH-9"
+            ]
+          }
+        ],
+        "diagnosis": [
+          {
+            "sequence": 1,
+            "diagnosisCodeableConcept": {
+              "coding": [
+                {
+                  "code": "i10"
+                }
+              ]
+            }
+          }
+        ],
+        "item": [
+          {
+            "sequence": 1,
+            "encounter": [
+              {
+                "reference": "Encounter/E4"
+              }
+            ],
+            "productOrService": {
+              "coding": [
+                {
+                  "code": "99214"
+                }
+              ]
+            },
+            "servicedDate": "2026-06-10",
+            "quantity": {
+              "value": 1
+            },
+            "net": {
+              "value": 150,
+              "currency": "USD"
+            }
+          }
+        ]
+      }
+    },
+    {
+      "resource": {
+        "resourceType": "Patient",
+        "id": "P5",
+        "gender": "male",
+        "birthDate": "1978-11-03"
+      }
+    },
+    {
+      "resource": {
+        "resourceType": "Encounter",
+        "id": "E5",
+        "status": "finished",
+        "period": {
+          "start": "2026-06-10T08:00:00Z",
+          "end": "2026-06-10T08:45:00Z"
+        }
+      }
+    },
+    {
+      "resource": {
+        "resourceType": "Practitioner",
+        "id": "PRV-5",
+        "identifier": [
+          {
+            "system": "http://hl7.org/fhir/sid/us-npi",
+            "value": "1999999999"
+          }
+        ]
+      }
+    },
+    {
+      "resource": {
+        "resourceType": "Coverage",
+        "id": "COV-5",
+        "status": "active",
+        "identifier": [
+          {
+            "value": "POL-5"
+          }
+        ],
+        "payor": [
+          {
+            "reference": "Organization/PAYER-A"
+          }
+        ],
+        "period": {
+          "start": "2026-01-01",
+          "end": "2026-12-31"
+        }
+      }
+    },
+    {
+      "resource": {
+        "resourceType": "Claim",
+        "id": "F5",
+        "status": "active",
+        "patient": {
+          "reference": "Patient/P5"
+        },
+        "provider": {
+          "reference": "Practitioner/PRV-5"
+        },
+        "insurance": [
+          {
+            "sequence": 1,
+            "focal": true,
+            "coverage": {
+              "reference": "Coverage/COV-5"
+            },
+            "preAuthRef": [
+              "AUTH-9"
+            ]
+          }
+        ],
+        "diagnosis": [
+          {
+            "sequence": 1,
+            "diagnosisCodeableConcept": {
+              "coding": [
+                {
+                  "code": "i10"
+                }
+              ]
+            }
+          }
+        ],
+        "item": [
+          {
+            "sequence": 1,
+            "encounter": [
+              {
+                "reference": "Encounter/E5"
+              }
+            ],
+            "productOrService": {
+              "coding": [
+                {
+                  "code": "99214"
+                }
+              ]
+            },
+            "servicedDate": "2026-06-10",
+            "quantity": {
+              "value": 1
+            },
+            "net": {
+              "value": 150,
+              "currency": "USD"
+            }
+          }
+        ]
+      }
+    }
+  ]
+}

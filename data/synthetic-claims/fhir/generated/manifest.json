@@ -1,0 +1,63 @@
+{
+  "v01_basic.json": {
+    "expect": "ok",
+    "claims": 1
+  },
+  "v02_urn_uuid.json": {
+    "expect": "ok",
+    "claims": 1
+  },
+  "v03_contained.json": {
+    "expect": "ok",
+    "claims": 1
+  },
+  "v04_multi_claim.json": {
+    "expect": "ok",
+    "claims": 2
+  },
+  "v05_minimal_optional.json": {
+    "expect": "ok",
+    "claims": 1
+  },
+  "v06_principal_servicedperiod.json": {
+    "expect": "ok",
+    "claims": 1
+  },
+  "b04_dangling_encounter.json": {
+    "expect": "rejected",
+    "field_path": "Claim.item[].encounter[0]"
+  },
+  "b05_net_is_string.json": {
+    "expect": "rejected",
+    "field_path": "Claim.item[0].net"
+  },
+  "b06_no_items.json": {
+    "expect": "rejected",
+    "field_path": "Claim.item"
+  },
+  "b07_duplicate_sequence.json": {
+    "expect": "rejected",
+    "field_path": "Claim.item[1].sequence"
+  },
+  "b08_bad_date.json": {
+    "expect": "rejected",
+    "field_path": "Patient.birthDate"
+  },
+  "b09_no_insurance.json": {
+    "expect": "rejected",
+    "field_path": "Claim.insurance"
+  },
+  "b10_wrong_ref_type.json": {
+    "expect": "rejected",
+    "field_path": "Claim.patient"
+  },
+  "b01_not_json.json": {
+    "expect": "rejected"
+  },
+  "b02_not_a_bundle.json": {
+    "expect": "rejected"
+  },
+  "b03_empty_bundle.json": {
+    "expect": "rejected"
+  }
+}
