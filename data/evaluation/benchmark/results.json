@@ -1,0 +1,123 @@
+{
+  "seed": 42,
+  "claims": 240,
+  "claims_exact_match": 239,
+  "exact_match_rate": 0.996,
+  "per_rule": {
+    "R-AMT-001": {
+      "support": 25,
+      "tp": 25,
+      "fp": 0,
+      "fn": 0,
+      "precision": 1.0,
+      "recall": 1.0,
+      "f1": 1.0
+    },
+    "R-QTY-001": {
+      "support": 21,
+      "tp": 21,
+      "fp": 0,
+      "fn": 0,
+      "precision": 1.0,
+      "recall": 1.0,
+      "f1": 1.0
+    },
+    "R-COV-001": {
+      "support": 23,
+      "tp": 23,
+      "fp": 0,
+      "fn": 0,
+      "precision": 1.0,
+      "recall": 1.0,
+      "f1": 1.0
+    },
+    "R-AUTH-001": {
+      "support": 28,
+      "tp": 28,
+      "fp": 0,
+      "fn": 0,
+      "precision": 1.0,
+      "recall": 1.0,
+      "f1": 1.0
+    },
+    "R-DUP-001": {
+      "support": 20,
+      "tp": 19,
+      "fp": 0,
+      "fn": 1,
+      "precision": 1.0,
+      "recall": 0.95,
+      "f1": 0.974
+    },
+    "R-DUP-002": {
+      "support": 20,
+      "tp": 20,
+      "fp": 0,
+      "fn": 0,
+      "precision": 1.0,
+      "recall": 1.0,
+      "f1": 1.0
+    },
+    "R-DX-001": {
+      "support": 24,
+      "tp": 24,
+      "fp": 0,
+      "fn": 0,
+      "precision": 1.0,
+      "recall": 1.0,
+      "f1": 1.0
+    },
+    "R-DX-002": {
+      "support": 12,
+      "tp": 12,
+      "fp": 0,
+      "fn": 0,
+      "precision": 1.0,
+      "recall": 1.0,
+      "f1": 1.0
+    },
+    "R-PRV-001": {
+      "support": 19,
+      "tp": 19,
+      "fp": 0,
+      "fn": 0,
+      "precision": 1.0,
+      "recall": 1.0,
+      "f1": 1.0
+    },
+    "R-DATE-001": {
+      "support": 23,
+      "tp": 23,
+      "fp": 0,
+      "fn": 0,
+      "precision": 1.0,
+      "recall": 1.0,
+      "f1": 1.0
+    },
+    "R-PAT-001": {
+      "support": 31,
+      "tp": 31,
+      "fp": 0,
+      "fn": 0,
+      "precision": 1.0,
+      "recall": 1.0,
+      "f1": 1.0
+    },
+    "R-CUR-001": {
+      "support": 29,
+      "tp": 29,
+      "fp": 0,
+      "fn": 0,
+      "precision": 1.0,
+      "recall": 1.0,
+      "f1": 1.0
+    }
+  },
+  "false_positives": [],
+  "false_negatives": [
+    [
+      "B106",
+      "R-DUP-001"
+    ]
+  ]
+}
