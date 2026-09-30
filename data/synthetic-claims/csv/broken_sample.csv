@@ -1,0 +1,2 @@
+claim_id,patient_id,encounter_id,policy_id,provider_id,line_no,procedure_code,quantity,amount
+C900,P1,E1,POL-1,PRV-1,1,99213,1,abc

@@ -1,0 +1,4 @@
+claim_id,patient_id,birth_date,gender,encounter_id,encounter_start,encounter_end,policy_id,payer_id,coverage_start,coverage_end,provider_id,provider_npi,diagnosis_codes,line_no,procedure_code,quantity,amount,currency,service_date,authorization_id
+C001,P001,1985-03-12,F,E001,2026-05-02,2026-05-02,POL-77,PAYER-A,2026-01-01,2026-12-31,PRV-9,1234567890,j45.0;r05,1,99213,1,120.50,USD,2026-05-02,AUTH-1
+C001,P001,1985-03-12,F,E001,2026-05-02,2026-05-02,POL-77,PAYER-A,2026-01-01,2026-12-31,PRV-9,1234567890,j45.0;r05,2,94010,1,80,USD,2026-05-02,
+C002,P002,14/07/1972,M,E002,02/06/2026,02/06/2026,POL-12,PAYER-A,01/01/2026,31/12/2026,PRV-3,,i10,1,99214,1,"200,00",USD,02/06/2026,AUTH-2

@@ -1,6 +1,6 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-
+from app.routers import claims
 from app.routers import analysis, dashboard, findings, health, metrics
 
 app = FastAPI(title="ClaimGuard AI API", version="0.1.0")
@@ -17,3 +17,5 @@ app.include_router(dashboard.router)
 app.include_router(findings.router)
 app.include_router(metrics.router)
 app.include_router(analysis.router)
+app.include_router(claims.router)
+
