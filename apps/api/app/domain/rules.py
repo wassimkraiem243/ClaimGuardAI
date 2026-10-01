@@ -27,8 +27,10 @@ class RuleConfig(BaseModel):
 class BatchContext:
     """Cross-claim facts for duplicate detection. Scope: the claims of the current upload."""
 
-    def __init__(self, claims: list[ClaimPackage]):
+    def __init__(self, claims: list[ClaimPackage], known: dict | None = None):
         self.by_key: dict[tuple, set[str]] = defaultdict(set)
+        for key, ids in (known or {}).items():  # services stored by earlier uploads
+            self.by_key[key] |= set(ids)
         for c in claims:
             for l in c.lines:
                 if l.service_date:
