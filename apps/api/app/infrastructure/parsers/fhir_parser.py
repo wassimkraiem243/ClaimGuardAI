@@ -1,5 +1,6 @@
 """FHIR R4 adapter: Bundle JSON -> one ClaimPackage per Claim resource."""
 import json
+import math
 
 from app.domain.claim_package import (ClaimLine, ClaimPackage, Coverage, Diagnosis, Encounter,
                                       IngestionRejected, Patient, Provider)
@@ -7,6 +8,14 @@ from app.mappers.normalizer import norm_code, norm_date, norm_text
 
 _GENDER = {"male": "M", "female": "F", "other": "O", "unknown": "U"}
 _PROVIDER_TYPES = {"Practitioner", "Organization", "PractitionerRole"}
+
+
+class _NonFinite(Exception):
+    pass
+
+
+def _reject_constant(name):  # json.loads would otherwise accept NaN / Infinity
+    raise _NonFinite(f"Non-finite number in JSON: {name}")
 
 
 def _rej(reason, path=None, cid=None):
@@ -27,7 +36,10 @@ def _date(value, path, cid):
 def _num(value, path, cid):
     if isinstance(value, bool) or not isinstance(value, (int, float)):
         raise _rej("Expected a number", path, cid)
-    return float(value)
+    f = float(value)
+    if not math.isfinite(f):  # 1e999 parses to inf
+        raise _rej("Number is not finite", path, cid)
+    return f
 
 
 def _first_code(concept, path, cid):
@@ -45,7 +57,11 @@ def _is_principal(diag: dict) -> bool:
 class FhirClaimParser:
     def parse(self, raw: bytes) -> list[ClaimPackage]:
         try:
-            bundle = json.loads(raw.decode("utf-8-sig"))
+            bundle = json.loads(raw.decode("utf-8-sig"), parse_constant=_reject_constant)
+        except _NonFinite as e:
+            raise IngestionRejected(str(e))
+        except RecursionError:
+            raise IngestionRejected("JSON is nested too deeply")
         except (UnicodeDecodeError, json.JSONDecodeError):
             raise IngestionRejected("Invalid JSON")
         if not isinstance(bundle, dict) or bundle.get("resourceType") != "Bundle":
@@ -67,12 +83,16 @@ class FhirClaimParser:
                 claims.append(res)
         if not claims:
             raise IngestionRejected("Bundle contains no Claim resource", field_path="entry")
-        try:
-            return [self._build(c, index) for c in claims]
-        except IngestionRejected:
-            raise
-        except (KeyError, TypeError, AttributeError, ValueError, IndexError) as e:
-            raise IngestionRejected(f"Malformed FHIR structure ({type(e).__name__})")
+        out = []
+        for c in claims:
+            try:
+                out.append(self._build(c, index))
+            except IngestionRejected:
+                raise
+            except (KeyError, TypeError, AttributeError, ValueError, IndexError) as e:
+                raise IngestionRejected(f"Malformed FHIR structure ({type(e).__name__})",
+                                        claim_id=None if c.get("id") is None else str(c["id"]))
+        return out
 
     @staticmethod
     def _resolve(ref, index, types, path, cid):
@@ -91,6 +111,8 @@ class FhirClaimParser:
         if not cid:
             raise _rej("Claim without id", "Claim.id")
         w: list[str] = []
+        if claim.get("use") not in (None, "claim"):
+            w.append(f"Claim.use={claim.get('use')}: not a claim for payment")
         local = dict(index)
         for c in claim.get("contained") or []:  # contained resources, referenced as "#id"
             if isinstance(c, dict) and c.get("id") and isinstance(c.get("resourceType"), str):
@@ -107,11 +129,14 @@ class FhirClaimParser:
         items = claim.get("item")
         if not isinstance(items, list) or not items:
             raise _rej("Claim without items", "Claim.item", cid)
-        enc_ref = next((r for it in items if isinstance(it, dict)
-                        for r in (it.get("encounter") or []) if isinstance(r, dict)), None)
-        if enc_ref is None:
+        enc_refs = [r for it in items if isinstance(it, dict)
+                    for r in (it.get("encounter") or []) if isinstance(r, dict)]
+        if not enc_refs:
             raise _rej("No claim item references an encounter", "Claim.item[].encounter", cid)
-        enc = res(enc_ref, {"Encounter"}, "Claim.item[].encounter[0]")
+        encs = [res(r, {"Encounter"}, "Claim.item[].encounter[0]") for r in enc_refs]
+        enc = encs[0]
+        if any(e is not enc for e in encs[1:]):
+            w.append("items reference several encounters; using the first")
 
         def rid(r, path):
             if not norm_text(r.get("id")):
@@ -181,6 +206,8 @@ class FhirClaimParser:
             if auth is None:
                 w.append(f"line {seq}: authorization_id missing")
             sdate = it.get("servicedDate") or (it.get("servicedPeriod") or {}).get("start")
+            if sdate is None:
+                w.append(f"line {seq}: service_date missing")
             lines.append(ClaimLine(
                 line_no=seq, procedure_code=_first_code(it.get("productOrService"), f"{p}.productOrService", cid),
                 quantity=_num((it.get("quantity") or {}).get("value"), f"{p}.quantity.value", cid),

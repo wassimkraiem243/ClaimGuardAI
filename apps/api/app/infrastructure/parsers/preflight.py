@@ -60,6 +60,8 @@ def check_fhir(raw: bytes) -> bytes:
         doc = json.loads(text)
     except json.JSONDecodeError as e:
         raise InputRejected(f"Invalid JSON at line {e.lineno}, column {e.colno}: {e.msg}", "file")
+    except RecursionError:
+        raise InputRejected("JSON is nested too deeply", "file")
     rtype = doc.get("resourceType") if isinstance(doc, dict) else None
     if rtype != "Bundle":
         raise InputRejected(f"Expected a FHIR Bundle, got resourceType={rtype!r}", "resourceType")
