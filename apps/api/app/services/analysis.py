@@ -4,6 +4,7 @@ from datetime import datetime, timezone
 
 from fastapi import HTTPException
 from sqlalchemy.orm import Session
+from app.schemas.findings import ValidationFindingDto
 
 from app.config import settings
 from app.infrastructure.knowledge import KnowledgeRetriever
@@ -131,3 +132,48 @@ def get_finding_analysis(db: Session, finding_id: str) -> dict:
             detail=f'No analysis stored for finding "{finding_id}". Trigger POST /analysis/findings/{finding_id} first.',
         )
     return FindingAnalysisRepository.to_response(record)
+
+async def enrich_finding_with_explanation(
+    raw_finding: ValidationFindingDto, 
+    rule_logic: str
+) -> ValidationFindingDto:
+    """
+    Uses bounded AI to generate a plain-language explanation and action plan.
+    Falls back to the deterministic finding if the model fails.
+    """
+    prompt = f"""
+    You are an administrative healthcare claims assistant.
+    Your task is to explain a rule validation failure based strictly on the provided evidence.
+    
+    Rule Logic: {rule_logic}
+    Claim ID: {raw_finding.claimId}
+    Evidence: {raw_finding.evidence}
+    Deterministic Severity: {raw_finding.severity}
+    
+    Constraints:
+    1. Do not invent missing evidence or identifiers.
+    2. Do not make clinical diagnosis or medical-necessity judgments.
+    3. Output valid JSON only, containing exactly two keys: "explanation" and "suggested_action".
+    """
+    
+    ollama = OllamaClient()
+    
+    try:
+        raw_json, _, _ = await ollama.generate_json(prompt)
+        ai_response = json.loads(raw_json)
+    except Exception as e:
+        ai_response = None
+
+    # Bounded Fallback: If AI fails, preserve the deterministic finding
+    if not ai_response or "explanation" not in ai_response:
+        raw_finding.explanation = "Deterministic rule failure. Automated explanation unavailable."
+        return raw_finding
+
+    # Enrich the finding with the grounded AI explanation
+    raw_finding.explanation = ai_response.get("explanation")
+    
+    # Only override the action if the AI provided a concrete one based on the rule
+    if ai_response.get("suggested_action"):
+        raw_finding.suggestedAction = ai_response.get("suggested_action")
+        
+    return raw_finding
