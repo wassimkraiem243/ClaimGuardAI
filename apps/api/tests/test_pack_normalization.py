@@ -6,9 +6,11 @@ import zipfile
 import pytest
 
 from app.domain.claim_package import IngestionRejected
+from app.infrastructure.parsers.fhir_bundles_jsonl_parser import FhirBundlesJsonlParser
 from app.infrastructure.parsers.jsonl_parser import JsonlEnvelopeParser
 from app.infrastructure.parsers.pack_csv_zip_parser import PackCsvZipParser
 from app.infrastructure.parsers.pack_fhir_parser import PackFhirBundleParser
+from app.services.ingest_claim import ingest_upload
 from app.services.rule_validation import get_policy_store, validate_envelope
 
 ROOT = pathlib.Path(__file__).resolve().parents[3]
@@ -91,3 +93,23 @@ def test_jsonl_file_ingest(path):
 def test_bad_jsonl_rejected():
     with pytest.raises(IngestionRejected):
         JsonlEnvelopeParser().parse(b'{"claim_id":"X"}\n')
+
+
+def test_fhir_bundles_jsonl_ingest():
+    path = DEV / "fhir_bundles.jsonl"
+    if not path.exists():
+        pytest.skip("fhir_bundles.jsonl missing")
+    first_line = path.read_text(encoding="utf-8").splitlines()[0]
+    (one,) = FhirBundlesJsonlParser().parse((first_line + "\n").encode())
+    assert one.source == "FHIR_PACK"
+    claims = ingest_upload("fhir_bundles.jsonl", path.read_bytes())
+    assert len(claims) >= 400
+
+
+def test_pack_claims_csv_rejected_with_hint():
+    path = DEV / "csv" / "claims.csv"
+    if not path.exists():
+        pytest.skip("claims.csv missing")
+    with pytest.raises(IngestionRejected) as exc:
+        ingest_upload("claims.csv", path.read_bytes())
+    assert "Zip every file" in exc.value.reason

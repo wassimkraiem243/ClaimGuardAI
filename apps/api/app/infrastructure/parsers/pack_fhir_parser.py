@@ -1,4 +1,5 @@
 """Teaching FHIR collection Bundle → pack claim envelope (doc 11 subset)."""
+import base64
 import json
 from typing import Any, Optional
 
