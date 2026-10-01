@@ -17,8 +17,8 @@ class EvaluateClaims:
         self._rules = [r for r in catalogue if r.enabled]
         self._registry = registry
 
-    def execute(self, claims: list[ClaimPackage]) -> list[ValidationFinding]:
-        ctx, out = BatchContext(claims), []
+    def execute(self, claims: list[ClaimPackage], known: dict | None = None) -> list[ValidationFinding]:
+        ctx, out = BatchContext(claims, known), []
         for c in claims:
             for cfg in self._rules:
                 for evidence, line_no in self._registry[cfg.id](c, cfg.params, ctx):
