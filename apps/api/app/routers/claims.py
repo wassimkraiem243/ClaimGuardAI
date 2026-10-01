@@ -11,7 +11,9 @@ from pydantic import BaseModel
 from app.domain.claim_package import ClaimPackage, IngestionRejected
 from app.domain.finding import ValidationFinding
 from app.domain.audit import AuditLog
+from app.domain.claim_repository import ClaimConflict
 from app.infrastructure.audit.factory import get_audit_log
+from app.infrastructure.repositories.factory import get_claim_repository
 from app.infrastructure.parsers.csv_parser import CsvClaimParser
 from app.infrastructure.parsers.fhir_parser import FhirClaimParser
 from app.infrastructure.parsers.preflight import InputRejected, check_fhir, prepare_csv, reject_duplicate_ids
@@ -90,7 +92,17 @@ async def ingest(file: UploadFile = File(...)):
 async def ingest_and_evaluate(file: UploadFile = File(...)):
     audit = get_audit_log()
     claims, meta = await _ingest(file, audit)
-    findings = EvaluateClaims(load_catalogue()).execute(claims)
+    repo = get_claim_repository()
+    known = repo.prior_services(claims) if repo else None  # services from earlier uploads
+    findings = EvaluateClaims(load_catalogue()).execute(claims, known)
+    if repo:
+        try:
+            for c in claims:
+                repo.save(c, meta.sha256, meta.received_at)
+                repo.save_findings(c.claim_id, [f for f in findings if f.claim_id == c.claim_id])
+        except ClaimConflict as e:
+            audit.append("CLAIM_CONFLICT", e.claim_id, {"file": file.filename, "sha256": meta.sha256})
+            raise HTTPException(409, detail={"event": "CLAIM_CONFLICT", "reason": str(e), "claim_id": e.claim_id})
     for f in findings:
         audit.append("FINDING_RAISED", f.claim_id, f.model_dump())
     flagged = {f.claim_id for f in findings}
