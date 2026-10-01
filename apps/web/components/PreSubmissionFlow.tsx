@@ -32,58 +32,53 @@ function statusCounts(results: RuleResultRow[]) {
   return counts;
 }
 
-/** Matches rule_engine/reporting/findings.py claim-level outcome. */
-type ClaimOutcome = 'ISSUES_FOUND' | 'UNRESOLVED_CHECKS' | 'NO_ISSUES_DETECTED';
+/** One primary state for the claim (human review wins over failed). */
+type DisplayState = 'HUMAN_REVIEW' | 'FAILED' | 'CLEARED';
 
 function isAmbiguousRuleResult(r: RuleResultRow): boolean {
   return r.status === 'UNABLE_TO_ASSESS' || r.status === 'NOT_IMPLEMENTED';
 }
 
-function deriveClaimOutcome(results: RuleResultRow[]): ClaimOutcome {
-  if (results.some((r) => r.status === 'FAIL')) return 'ISSUES_FOUND';
-  if (results.some(isAmbiguousRuleResult)) return 'UNRESOLVED_CHECKS';
-  return 'NO_ISSUES_DETECTED';
+function deriveDisplayState(results: RuleResultRow[]): DisplayState {
+  if (results.some(isAmbiguousRuleResult)) return 'HUMAN_REVIEW';
+  if (results.some((r) => r.status === 'FAIL')) return 'FAILED';
+  return 'CLEARED';
 }
 
-function needsMandatoryHumanReview(results: RuleResultRow[]): boolean {
-  return results.some(isAmbiguousRuleResult);
-}
-
-function humanReviewRoutingMessage(
-  outcome: ClaimOutcome,
+function displayStateBanner(
+  state: DisplayState,
   failCount: number,
-  passCount: number,
   humanReviewCount: number,
 ): string {
-  if (humanReviewCount === 0) return '';
-  if (outcome === 'ISSUES_FOUND') {
-    return `Route to a human reviewer: ${humanReviewCount} ambiguous rule(s) sit alongside ${failCount} failure(s). Fix FAIL items, then have a reviewer assess the ambiguous rules before submit.`;
+  if (state === 'HUMAN_REVIEW') {
+    if (failCount > 0) {
+      return `This claim is routed to a human reviewer (${humanReviewCount} ambiguous rule(s), ${failCount} failure(s) in the same run). Do not treat it as auto-failed or auto-cleared.`;
+    }
+    return 'This claim is routed to a human reviewer because at least one rule could not be decided automatically.';
   }
-  return `Route to a human reviewer: ${humanReviewCount} ambiguous rule(s) with ${passCount} passing check(s). Passing rules do not remove the need for human review on unresolved items.`;
+  if (state === 'FAILED') {
+    return 'Clear rule failures were found. Correct the claim before submission.';
+  }
+  return 'No issues detected by these payer rules. This is not a payer approval or clinical decision.';
 }
 
-const OUTCOME_DISPLAY: Record<
-  ClaimOutcome,
-  { title: string; sub: string; banner: string; bannerClass: string }
+const DISPLAY_STATE: Record<
+  DisplayState,
+  { outcomeLabel: string; outcomeSub: string; bannerClass: string }
 > = {
-  ISSUES_FOUND: {
-    title: 'Failed',
-    sub: 'Deterministic rule failures',
-    banner: 'Issues found. Correct the failed rules before submission.',
-    bannerClass: 'border-critical/30 bg-critical/10 text-critical',
-  },
-  UNRESOLVED_CHECKS: {
-    title: 'Human review required',
-    sub: 'Ambiguous or incomplete checks (no proven FAIL)',
-    banner:
-      'At least one rule could not be decided automatically. A human must review these findings before submit.',
+  HUMAN_REVIEW: {
+    outcomeLabel: 'Human review',
+    outcomeSub: 'Routed to a reviewer',
     bannerClass: 'border-high/30 bg-high/10 text-high',
   },
-  NO_ISSUES_DETECTED: {
-    title: 'Cleared',
-    sub: 'No issues from these checks',
-    banner:
-      'No issues detected by these payer rules. This is not a payer approval or clinical decision.',
+  FAILED: {
+    outcomeLabel: 'Failed',
+    outcomeSub: 'Fix before submit',
+    bannerClass: 'border-critical/30 bg-critical/10 text-critical',
+  },
+  CLEARED: {
+    outcomeLabel: 'Cleared',
+    outcomeSub: 'No blocking rules',
     bannerClass: 'border-success/30 bg-success/10 text-success',
   },
 };
@@ -184,27 +179,14 @@ export function PreSubmissionFlow() {
     return validation.results.filter(isAmbiguousRuleResult).length;
   }, [validation]);
 
-  const mandatoryHumanReview = useMemo(
-    () => (validation ? needsMandatoryHumanReview(validation.results) : false),
-    [validation],
-  );
+  const needsAttention = failCount + humanReviewCount;
 
-  const claimOutcome = useMemo(
-    () => (validation ? deriveClaimOutcome(validation.results) : null),
+  const displayState = useMemo(
+    () => (validation ? deriveDisplayState(validation.results) : null),
     [validation],
   );
 
   const passCount = validation?.results.filter((r) => r.status === 'PASS').length ?? 0;
-
-  const outcomeBannerText = useMemo(() => {
-    if (!claimOutcome || !validation) return '';
-    return OUTCOME_DISPLAY[claimOutcome].banner;
-  }, [claimOutcome, validation]);
-
-  const humanReviewMessage = useMemo(() => {
-    if (!claimOutcome || !mandatoryHumanReview) return '';
-    return humanReviewRoutingMessage(claimOutcome, failCount, passCount, humanReviewCount);
-  }, [claimOutcome, mandatoryHumanReview, failCount, passCount, humanReviewCount]);
   const counts = validation ? statusCounts(validation.results) : null;
 
   const filteredResults = useMemo(() => {
@@ -622,58 +604,36 @@ export function PreSubmissionFlow() {
               </p>
             ) : (
               <div className="mt-6 space-y-6">
-                {claimOutcome && (
+                {displayState && (
                   <div
-                    className={`rounded-2xl border px-5 py-4 ${OUTCOME_DISPLAY[claimOutcome].bannerClass}`}
+                    className={`rounded-2xl border px-5 py-4 ${DISPLAY_STATE[displayState].bannerClass}`}
                     role="status"
                   >
-                    <p className="text-sm font-semibold">{OUTCOME_DISPLAY[claimOutcome].title}</p>
-                    <p className="mt-1 text-sm opacity-90">{outcomeBannerText}</p>
-                  </div>
-                )}
-
-                {mandatoryHumanReview && humanReviewMessage && (
-                  <div
-                    className="rounded-2xl border border-high/30 bg-high/10 px-5 py-4 text-high"
-                    role="status"
-                  >
-                    <p className="text-sm font-semibold">Routed to human review</p>
-                    <p className="mt-1 text-sm opacity-90">{humanReviewMessage}</p>
+                    <p className="text-sm font-semibold">
+                      {DISPLAY_STATE[displayState].outcomeLabel}
+                    </p>
+                    <p className="mt-1 text-sm opacity-90">
+                      {displayStateBanner(displayState, failCount, humanReviewCount)}
+                    </p>
                   </div>
                 )}
 
                 <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-                  <StatCard label="Failed rules" value={failCount} sub="Clear FAIL (fix data)" />
                   <StatCard
-                    label="Human review queue"
-                    value={humanReviewCount}
-                    sub={
-                      mandatoryHumanReview
-                        ? 'Ambiguity: must go to a reviewer'
-                        : 'No ambiguous rules'
-                    }
+                    label="Needs attention"
+                    value={needsAttention}
+                    sub="FAIL + ambiguous rules"
                   />
                   <StatCard label="Passed" value={passCount} />
                   <StatCard label="Duration" value={`${validation.run.duration_ms} ms`} />
+                  {displayState && (
+                    <StatCard
+                      label="Outcome"
+                      value={DISPLAY_STATE[displayState].outcomeLabel}
+                      sub={DISPLAY_STATE[displayState].outcomeSub}
+                    />
+                  )}
                 </div>
-
-                {claimOutcome && (
-                  <div className="rounded-2xl bg-surface-muted px-4 py-3 text-sm">
-                    <span className="font-medium text-text">Claim outcome: </span>
-                    <span className="font-semibold text-text">
-                      {OUTCOME_DISPLAY[claimOutcome].title}
-                    </span>
-                    <span className="text-text-muted"> · {OUTCOME_DISPLAY[claimOutcome].sub}</span>
-                    {mandatoryHumanReview && (
-                      <span className="text-text-muted">
-                        {' '}
-                        · <span className="font-medium text-high">Routed to human review</span> (
-                        {humanReviewCount} ambiguous rule
-                        {humanReviewCount === 1 ? '' : 's'})
-                      </span>
-                    )}
-                  </div>
-                )}
 
                 <div className="rounded-2xl bg-surface-muted px-4 py-3 text-xs text-text-muted">
                   <span className="font-medium text-text">Audit trail:</span> run{' '}
