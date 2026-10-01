@@ -18,6 +18,16 @@ const NAV_ITEMS = [
     ),
   },
   {
+    href: '/phase1',
+    label: 'Phase 1 flow',
+    icon: (
+      <svg width="20" height="20" viewBox="0 0 20 20" fill="none" aria-hidden="true">
+        <path d="M4 4h12v12H4z" stroke="currentColor" strokeWidth="1.5" />
+        <path d="M7 8h6M7 12h4" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
+      </svg>
+    ),
+  },
+  {
     href: '/findings',
     label: 'Validations',
     icon: (
