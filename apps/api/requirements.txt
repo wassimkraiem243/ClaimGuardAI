@@ -9,3 +9,5 @@ python-dotenv>=1.0.0
 sqlalchemy
 alembic
 psycopg[binary]
+
+PyJWT

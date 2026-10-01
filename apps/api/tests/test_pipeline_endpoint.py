@@ -38,6 +38,7 @@ def test_fhir_clean_bundle_has_no_findings(client):
 def test_rejection_is_audited_and_chain_verifies(client):
     assert post(client, "fhir/broken_bundle.json").status_code == 400
     events = client.get("/claims/audit").json()
+    print(r.status_code, r.text)
     assert [e["type"] for e in events] == ["INGESTION_REJECTED"]
     assert client.get("/claims/audit/verify").json()["valid"] is True
 

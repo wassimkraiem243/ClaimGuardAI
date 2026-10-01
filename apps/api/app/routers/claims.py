@@ -121,10 +121,6 @@ async def ingest_and_evaluate(file: UploadFile = File(...)):
     return EvaluationResult(meta=meta, summary=summary, claims=claims, findings=findings)
 
 
-@router.get("/audit")
-def read_audit(claim_id: Optional[str] = None):
-    return get_audit_log().read(claim_id)
-
 
 @router.get("/audit/verify")
 def verify_audit():

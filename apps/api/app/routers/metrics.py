@@ -2,11 +2,9 @@ from fastapi import APIRouter, Depends
 from sqlalchemy.orm import Session
 
 from app.db.session import get_db
-from app.deps import require_api_key
 from app.repositories.store import FindingRepository
 
-router = APIRouter(prefix="/metrics", tags=["metrics"], dependencies=[Depends(require_api_key)])
-
+router = APIRouter(prefix="/metrics", tags=["metrics"])
 
 @router.get("")
 def metrics(
