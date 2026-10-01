@@ -1,7 +1,9 @@
-import type { NextConfig } from "next";
+import type { NextConfig } from 'next';
 
 const nextConfig: NextConfig = {
-  transpilePackages: ["@claimguard/shared-types"],
+  async redirects() {
+    return [{ source: '/findings', destination: '/', permanent: false }];
+  },
 };
 
 export default nextConfig;

@@ -17,7 +17,7 @@ const jetbrains = JetBrains_Mono({
 
 export const metadata: Metadata = {
   title: 'ClaimGuard AI',
-  description: 'Security scan findings viewer',
+  description: 'Pre-submission claim validation against payer rules',
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {

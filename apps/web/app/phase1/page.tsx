@@ -1,9 +1,5 @@
-import { Phase1Flow } from './Phase1Flow';
+import { redirect } from 'next/navigation';
 
-export const metadata = {
-  title: 'Phase 1 flow | ClaimGuard AI',
-};
-
-export default function Phase1Page() {
-  return <Phase1Flow />;
+export default function LegacyPhase1Page() {
+  redirect('/');
 }
