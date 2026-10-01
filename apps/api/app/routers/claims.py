@@ -1,7 +1,8 @@
 from fastapi import APIRouter, Depends, File, HTTPException, UploadFile
 
 from app.deps import require_api_key
-from app.domain.claim_package import ClaimPackage, IngestionRejected
+from app.domain.claim_package import IngestionRejected
+from app.domain.normalized_claim import NormalizedClaim
 from app.services.ingest_claim import ingest_upload
 
 router = APIRouter(
@@ -12,7 +13,7 @@ router = APIRouter(
 MAX_BYTES = 5 * 1024 * 1024  # minimization / DoS guard
 
 
-@router.post("/ingest", response_model=list[ClaimPackage])
+@router.post("/ingest", response_model=list[NormalizedClaim])
 async def ingest(file: UploadFile = File(...)):
     raw = await file.read()
     if len(raw) > MAX_BYTES:

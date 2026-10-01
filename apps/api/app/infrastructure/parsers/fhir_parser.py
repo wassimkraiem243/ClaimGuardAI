@@ -194,3 +194,8 @@ class FhirClaimParser:
             provider=Provider(id=rid(prov, "Claim.provider.id"), npi=norm_text(npi)),
             diagnoses=diagnoses, lines=sorted(lines, key=lambda l: l.line_no),
             ingestion_warnings=w)
+
+    def parse_normalized(self, raw: bytes):
+        from app.mappers.legacy_envelope import claim_package_to_envelope
+
+        return [claim_package_to_envelope(p, "FHIR_LEGACY") for p in self.parse(raw)]

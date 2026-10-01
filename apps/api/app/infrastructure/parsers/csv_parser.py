@@ -37,6 +37,11 @@ class CsvClaimParser:
             raise IngestionRejected("CSV has a header but no data rows")
         return [self._build(cid, rows) for cid, rows in groups.items()]
 
+    def parse_normalized(self, raw: bytes):
+        from app.mappers.legacy_envelope import claim_package_to_envelope
+
+        return [claim_package_to_envelope(p, "CSV_LEGACY") for p in self.parse(raw)]
+
     def _build(self, cid: str, rows: list[dict]) -> ClaimPackage:
         warnings: list[str] = []
         first = rows[0]

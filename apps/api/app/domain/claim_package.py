@@ -1,5 +1,6 @@
-"""Internal, format-agnostic claim model. THIS IS THE CONTRACT with the rule/audit/UI teammates.
-Do not change field names without telling the team."""
+"""Physical claim shape from legacy CSV/FHIR demo files (internal to legacy parsers).
+
+Normalized API output is `NormalizedClaim` with the student-pack envelope in `envelope`."""
 from typing import Literal, Optional
 from pydantic import BaseModel, Field
 

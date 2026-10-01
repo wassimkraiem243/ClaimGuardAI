@@ -1,8 +1,9 @@
 from typing import Protocol
-from app.domain.claim_package import ClaimPackage
+
+from app.domain.normalized_claim import NormalizedClaim
 
 
 class ClaimParser(Protocol):
-    """Port: any input format (CSV, FHIR...) implements this."""
+    """Port: raw bytes -> normalized teaching envelopes."""
 
-    def parse(self, raw: bytes) -> list[ClaimPackage]: ...
+    def parse(self, raw: bytes) -> list[NormalizedClaim]: ...

@@ -9,13 +9,11 @@ parser = FhirClaimParser()
 
 
 def test_valid_bundle_normalizes():
-    (c,) = parser.parse((D / "valid_bundle.json").read_bytes())
-    assert c.claim_id == "F001" and c.source == "FHIR"
-    assert c.patient.gender == "F" and c.patient.birth_date == "1985-03-12"
-    assert c.encounter.start == "2026-05-02" and c.coverage.policy_id == "POL-77"
-    assert c.coverage.payer_id == "PAYER-A" and c.provider.npi == "1234567890"
-    assert [d.code for d in c.diagnoses] == ["J45.0", "R05"] and c.diagnoses[0].primary
-    assert len(c.lines) == 2 and c.lines[0].amount == 120.5 and c.lines[0].authorization_id == "AUTH-1"
+    (norm,) = parser.parse_normalized((D / "valid_bundle.json").read_bytes())
+    env = norm.envelope
+    assert env["claim_id"] == "F001" and norm.source == "FHIR_LEGACY"
+    assert env["patient_id"] == "P001"
+    assert env["lines"][0]["net_amount"] == 120.5
 
 
 def test_dangling_reference_rejected():

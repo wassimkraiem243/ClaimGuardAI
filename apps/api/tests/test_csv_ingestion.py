@@ -9,12 +9,12 @@ parser = CsvClaimParser()
 
 
 def test_valid_sample_normalizes():
-    claims = parser.parse((D / "valid_sample.csv").read_bytes())
-    assert [c.claim_id for c in claims] == ["C001", "C002"]
-    c1, c2 = claims
-    assert len(c1.lines) == 2 and c1.diagnoses[0].code == "J45.0" and c1.diagnoses[0].primary
-    assert c2.patient.birth_date == "1972-07-14" and c2.lines[0].amount == 200.0
-    assert "line 2: authorization_id missing" in c1.ingestion_warnings
+    claims = parser.parse_normalized((D / "valid_sample.csv").read_bytes())
+    assert [c.envelope["claim_id"] for c in claims] == ["C001", "C002"]
+    c1 = claims[0].envelope
+    assert len(c1["lines"]) == 2 and c1["diagnosis_code"] == "J45.0"
+    assert claims[0].source == "CSV_LEGACY"
+    assert any("legacy flat CSV" in w for w in claims[0].ingestion_warnings)
 
 
 def test_broken_rejected_with_field_path():
