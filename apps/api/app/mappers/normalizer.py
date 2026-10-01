@@ -30,6 +30,27 @@ def norm_text(value: Optional[str]) -> Optional[str]:
     return value.strip()
 
 
+_GENDER = {
+    "m": "M",
+    "f": "F",
+    "male": "M",
+    "female": "F",
+    "other": "O",
+    "unknown": "U",
+    "o": "O",
+    "u": "U",
+}
+
+
+def norm_gender(value: Optional[str]) -> Optional[str]:
+    if value is None or not value.strip():
+        return None
+    key = value.strip().lower()
+    if len(key) == 1 and key.upper() in {"M", "F", "O", "U"}:
+        return key.upper()
+    return _GENDER.get(key)
+
+
 def norm_number(value: Optional[str]) -> float:
     """Accepts '1 200,50' or '1200.50'. Raises ValueError if not numeric."""
     v = value.strip().replace(" ", "")

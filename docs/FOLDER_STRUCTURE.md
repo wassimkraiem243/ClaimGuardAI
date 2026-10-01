@@ -30,7 +30,9 @@ Runnable applications live under **`apps/`**. Shared frontend types live under *
 | `apps/web/` | Next.js reviewer / operator UI | Dashboard, validation list, HITL review queues, rule admin (bonus) |
 | `packages/shared-types/` | Shared TypeScript DTOs | `ValidationFinding`, `ClaimPackage`, API contracts |
 | `data/` | **Versioned synthetic inputs** (git) | FHIR bundles, CSV exports, payer rule YAML/JSON, benchmark labels |
-| `docs/` | Human-readable deliverables | Architecture diagrams, evaluation reports, security notes, challenge brief |
+| `docs/` | Human-readable deliverables | `docs/architecture/` (Phase 1 diagrams), `docs/deliverables/`, evaluation, security, challenge brief |
+| `Conceptions/` | Pre-implementation planning | `PROJECT_CONCEPTION.md` (+ legacy HTML export) |
+| `ClaimGuardAI_Student_Starter_Pack/` | Official teaching pack | Data, rules, baseline code, schemas — **source of truth** for R001–R015 |
 | `scripts/` | Repo automation | Dev bootstrap (`prepare-dev.mjs`), cache cleanup (`clean-dev-cache.mjs`) |
 | `docker-compose.yml` | Local infra | Postgres (pgvector) |
 
@@ -40,8 +42,8 @@ Runnable applications live under **`apps/`**. Shared frontend types live under *
 |------|----------|
 | `data/synthetic-claims/fhir/` | One file per claim or per bundle (`Claim`, `Patient`, `Coverage`, …) |
 | `data/synthetic-claims/csv/` | Tabular exports if the challenge provides CSV |
-| `data/payer-rules/` | Fictional payer catalogue (10–15 rules); prefer machine-readable JSON/YAML + short README |
-| `data/evaluation/benchmark/` | The 50-claim validation set + ground-truth labels for F1 scoring |
+| `data/payer-rules/` | Copy or mirror of pack `rules/*.json` when implementing (R001–R015) |
+| `data/evaluation/benchmark/` | Prefer pack **validation** (150) / **stress** (50) splits + `expected_results.jsonl` for F1 work |
 | `data/attachments/samples/` | Synthetic PDFs/images for optional OCR/RAG (no real clinical notes) |
 
 **Large files:** use Git LFS or external storage + download script; document in `data/README.md`.
@@ -50,8 +52,11 @@ Runnable applications live under **`apps/`**. Shared frontend types live under *
 
 | Path | Purpose |
 |------|---------|
-| `app/services/` | Use cases (claims ingest, rules, audit) |
-| `app/infrastructure/` | FHIR parsers, rule catalogue, Ollama, pgvector |
+| `app/domain/` | Format-agnostic models (`ClaimPackage`) and ports (`ClaimParser`) |
+| `app/services/` | Use cases (ingest, rules, audit) |
+| `app/infrastructure/parsers/` | CSV + FHIR adapters implementing `ClaimParser` |
+| `app/mappers/` | Normalization helpers (no I/O) |
+| `app/infrastructure/` | Ollama, pgvector, rule catalogue loaders |
 | `app/repositories/` | Postgres access |
 | `knowledge/` | Markdown/policy chunks for RAG |
 | `db/migrations/` | Ordered SQL migrations |
@@ -61,7 +66,8 @@ Runnable applications live under **`apps/`**. Shared frontend types live under *
 
 | Path | Deliverable |
 |------|-------------|
-| `docs/architecture/` | Diagrams (C4, data flow, sequence: ingest → rules → explain → audit) |
+| `docs/architecture/` | **Phase 1:** system architecture, ingestion data-flow, validation sequence, domain model, validation state machine (Mermaid) |
+| `docs/deliverables/` | `PHASE1_CHECKLIST.md`, `WORK_PLAN.md`, `video/` (demo script/link) |
 | `docs/challenge/` | Official brief + reference material (`CSTAM_VELODOC_BRIEF.md`, `cstamBook.txt`) |
 | `docs/deliverables/video/` | Script/storyboard; link to hosted demo video |
 | `docs/security/` | Threat model, RBAC, data minimization, prompt safety |

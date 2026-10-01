@@ -5,7 +5,7 @@ from collections import OrderedDict
 
 from app.domain.claim_package import (ClaimLine, ClaimPackage, Coverage, Diagnosis, Encounter,
                                       IngestionRejected, Patient, Provider)
-from app.mappers.normalizer import norm_code, norm_date, norm_number, norm_text
+from app.mappers.normalizer import norm_code, norm_date, norm_gender, norm_number, norm_text
 
 REQUIRED = ["claim_id", "patient_id", "encounter_id", "policy_id", "provider_id",
             "line_no", "procedure_code", "quantity", "amount"]
@@ -92,7 +92,7 @@ class CsvClaimParser:
         return ClaimPackage(
             claim_id=cid, source="CSV",
             patient=Patient(id=req(first, "patient_id"), birth_date=date(first, "birth_date"),
-                            gender=norm_text(first.get("gender"))),
+                            gender=norm_gender(first.get("gender"))),
             encounter=Encounter(id=req(first, "encounter_id"), start=date(first, "encounter_start"),
                                 end=date(first, "encounter_end")),
             coverage=Coverage(policy_id=req(first, "policy_id"), payer_id=norm_text(first.get("payer_id")),

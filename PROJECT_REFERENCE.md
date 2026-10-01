@@ -39,8 +39,9 @@ Human reviewers (HITL)               ←    Escalate low confidence / high sever
 | Area | Status |
 |------|--------|
 | Repo layout (npm workspaces + FastAPI + Next.js + Postgres) | **Ready** — layered API in `apps/api/ARCHITECTURE.md` |
-| FHIR ingestion & claim schema | **In progress** — `apps/api/app/services/` (claims), `app/infrastructure/` (FHIR) |
-| Payer rule engine & audit log | **In progress** — `apps/api/app/services/` (rules, audit) |
+| CSV + FHIR ingest → `ClaimPackage` | **Ready** — `POST /claims/ingest`; samples in `data/synthetic-claims/`; tests in `apps/api/tests/` |
+| JSONL claim envelope (student pack) | **Not started** — separate adapter when rules align on pack schema |
+| Payer rule engine & audit log | **In progress** — reject audit on ingest still TODO in `routers/claims.py` |
 | UI labels (ClaimGuard branding) | **Partial** — validation UI at `/findings` (rename planned) |
 | Dashboard & LLM finding analysis | **Ready** — FastAPI + Next.js shell |
 
@@ -50,10 +51,10 @@ Human reviewers (HITL)               ←    Escalate low confidence / high sever
 
 | Phase | Theme | Repo touchpoints |
 |-------|--------|------------------|
-| P1 | Ingestion & normalization (15) | `apps/api` claim ingest modules, `data/synthetic-claims/` |
-| P1 | Rule engine (15) | `apps/api` rules modules, `data/payer-rules/` |
-| P1 | Explainability (10) | Ollama integration in `apps/api`, `ValidationFindingDto` |
-| P1 | Audit log (10) | audit modules + SQL migrations |
+| P1 | Ingestion & normalization (15) | `apps/api` ingest; pack schemas in `ClaimGuardAI_Student_Starter_Pack/schemas/` |
+| P1 | Rule engine (15) | R001–R015; align with `rules/rules.json` + `engine_core.py` pattern |
+| P1 | Explainability (10) | One bounded `ExplanationProvider`; results match `result.schema.json` |
+| P1 | Audit log (10) | Hash-chained ledger + verify; diagrams in `docs/architecture/` |
 | P2 | Benchmark F1 (15) | `data/evaluation/benchmark/`, scripts under `scripts/` |
 | P2 | HITL (10) | `apps/web` review flows, override API |
 | P2 | Security (5) | `docs/security/`, API key guard, input validation, prompt guards |
@@ -62,22 +63,31 @@ Bonus features: extra Python modules inside `apps/api`, WebSocket support, rule 
 
 ---
 
-## 3. Target validation finding (structured output)
+## 3. Target rule result (structured output)
+
+Align with the student pack **`schemas/result.schema.json`** (15 rows per claim). Map to TypeScript in `@claimguard/shared-types` when implementing the validation API.
 
 ```typescript
-// Target shape — implement in packages/shared-types when refactoring
-interface ValidationFindingDto {
+// Teaching contract (names snake_case in JSONL; camelCase optional in TS DTOs)
+interface RuleResultDto {
   claimId: string;
-  ruleId: string;
-  severity: 'LOW' | 'MEDIUM' | 'HIGH' | 'CRITICAL';
-  confidence: number; // 0–1
-  evidence: string;   // rule-linked, cite fields/paths
-  suggestedAction: string;
-  explanation?: string; // human-readable (may be LLM-generated)
+  ruleId: string; // R001 … R015
+  ruleVersion: '1.0.0';
+  status: 'PASS' | 'FAIL' | 'UNABLE_TO_ASSESS' | 'NOT_APPLICABLE';
+  severity: 'high' | 'medium' | 'low';
+  affectedLineIds: string[];
+  evidence: { path: string; value: unknown }[];
+  ruleSource: string;
+  explanation: string;
+  correctiveAction: string;
+  confidence: number | null; // null when confidenceKind is not_probabilistic
+  confidenceKind: string;
+  requiresHumanReview: boolean;
+  method: string;
 }
 ```
 
-The API currently exposes **`UnifiedFindingDto`**; migrate to **`ValidationFindingDto`** in `@claimguard/shared-types` as claim validation lands.
+LLM-generated prose belongs in a separate **explanation draft** object; it must not change `status`. The dashboard may still expose **`UnifiedFindingDto`** until the claim validation API lands.
 
 ---
 
@@ -106,7 +116,6 @@ Header: `x-api-key: <API_KEY>` (default: `dev-local-key`)
 
 | Method | Path | Description |
 |--------|------|-------------|
-| `POST` | `/claims/ingest` | Ingest FHIR bundle or CSV reference |
 | `POST` | `/claims/:id/validate` | Run rule catalogue |
 | `GET` | `/claims/:id/findings` | Structured validation findings |
 | `GET` | `/audit?claimId=` | Audit trail |
@@ -116,6 +125,7 @@ Header: `x-api-key: <API_KEY>` (default: `dev-local-key`)
 
 | Method | Path | Notes |
 |--------|------|--------|
+| `POST` | `/claims/ingest` | Multipart upload: `.csv` or FHIR Bundle `.json` → `ClaimPackage[]` (5 MB max; `x-api-key` required) |
 | `GET` | `/dashboard/overview` | Overview metrics |
 | `GET` | `/findings` | List validation findings |
 | `POST` | `/analysis/findings/:id` | Per-finding LLM explanation |
@@ -206,12 +216,18 @@ Default seeded project slug: `claimguard-demo`.
 claimguard-ai/
 ├── apps/
 │   ├── api/               # FastAPI backend (Python)
+│   │   └── app/
+│   │       ├── domain/    # ClaimPackage, ports (no I/O)
+│   │       ├── services/  # Use cases (ingest, rules, …)
+│   │       └── infrastructure/parsers/  # CSV + FHIR adapters
 │   └── web/               # Next.js UI (npm workspace)
 ├── packages/
 │   └── shared-types/      # @claimguard/shared-types (npm workspace)
 ├── data/
+│   └── synthetic-claims/  # CSV + FHIR fixtures (+ fhir/generated/)
 ├── docs/
-├── scripts/
+│   └── architecture/      # Phase 1 Mermaid diagrams
+├── scripts/               # e.g. generate_fhir_samples.py
 ├── docker-compose.yml
 ├── package.json
 ├── PROJECT_REFERENCE.md
@@ -226,6 +242,13 @@ claimguard-ai/
 |------|------|
 | SQL migrations | `apps/api/db/migrations/` |
 | API entry | `apps/api/app/main.py` |
+| Ingest use case | `apps/api/app/services/ingest_claim.py` |
+| Claim contract | `apps/api/app/domain/claim_package.py` |
+| CSV / FHIR parsers | `apps/api/app/infrastructure/parsers/` |
+| Normalization | `apps/api/app/mappers/normalizer.py` |
+| Ingest route | `apps/api/app/routers/claims.py` |
+| Ingestion tests | `apps/api/tests/test_*_ingestion.py` |
+| Architecture diagrams | `docs/architecture/` (ingestion flow + validation sequence) |
 | LLM analysis | `apps/api/app/services/analysis.py` |
 | Ollama client | `apps/api/app/infrastructure/ollama.py` |
 | Web home | `apps/web/app/page.tsx` |
@@ -254,4 +277,4 @@ New code should prefer claim modules under `apps/api/app/services/` and `apps/ap
 
 ---
 
-*Last updated: September 2026 — `apps/api` + `apps/web` layout, npm workspaces, no Turborepo.*
+*Last updated: October 2026 — ingestion (CSV/FHIR → ClaimPackage), npm workspaces, docs/architecture/.*

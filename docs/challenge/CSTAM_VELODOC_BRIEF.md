@@ -32,11 +32,13 @@ Constraints: no unauthorized clinical decisions; must not disrupt existing admin
 | Area | Points | Requirement |
 |------|--------|-------------|
 | Data ingestion & normalization | 15 | FHIR R4 JSON / CSV → consistent internal model (patient, encounter, coverage, provider, diagnosis, claim lines) |
-| Deterministic & AI rule engine | 15 | Validate against fictional payer catalogue (**10–15 rules**): missing, inconsistent, duplicate, unsupported data |
+| Deterministic & AI rule engine | 15 | Validate against fictional payer catalogue (**15 rules R001–R015** in student pack): missing, inconsistent, duplicate, unsupported data; include UNABLE_TO_ASSESS / NOT_APPLICABLE |
 | Explainability & structured output | 10 | Findings: Claim ID, Rule ID, evidence, severity, confidence, corrective action |
 | Audit log engine | 10 | Immutable log of checks, AI recommendations, confidence, decisions |
 
 **Deliverables:** architecture diagram, data-flow doc, short demo video, repo with install/run instructions.
+
+**Team copies:** See `docs/architecture/` and `docs/deliverables/PHASE1_CHECKLIST.md`. Detailed MVP behaviour and schemas live in `ClaimGuardAI_Student_Starter_Pack/docs/01_Challenge_Brief.md`.
 
 ## Phase 2 — Integration & testing (30 points)
 

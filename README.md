@@ -2,7 +2,7 @@
 
 Human-supervised agentic copilot for **healthcare claim pre-validation** (CSTAM-VELODOC × Velodoc Amazit).
 
-Monorepo for **ClaimGuard AI**: **FastAPI** backend (`apps/api`), **Next.js** UI (`apps/web`), shared DTOs (`packages/shared-types`), Postgres (pgvector), and LLM-assisted explanations. Claim ingestion (FHIR), payer rules, and the full audit log are **in progress** — see [PROJECT_REFERENCE.md](PROJECT_REFERENCE.md) for status and conventions.
+Monorepo for **ClaimGuard AI**: **FastAPI** backend (`apps/api`), **Next.js** UI (`apps/web`), shared DTOs (`packages/shared-types`), Postgres (pgvector), and LLM-assisted explanations. **CSV/FHIR ingest** to `ClaimPackage` is available at `POST /claims/ingest`; payer rules, JSONL envelope ingest, persistence, and the hash-chained audit log are **in progress** — see [PROJECT_REFERENCE.md](PROJECT_REFERENCE.md).
 
 ## Quick links
 
@@ -10,6 +10,9 @@ Monorepo for **ClaimGuard AI**: **FastAPI** backend (`apps/api`), **Next.js** UI
 |----------|-------------|
 | [PROJECT_REFERENCE.md](PROJECT_REFERENCE.md) | Architecture, ports, env, API plan — **start here for development** |
 | [docs/challenge/CSTAM_VELODOC_BRIEF.md](docs/challenge/CSTAM_VELODOC_BRIEF.md) | Official challenge requirements & scoring |
+| [docs/architecture/README.md](docs/architecture/README.md) | **Phase 1** architecture & data-flow diagrams |
+| [docs/deliverables/PHASE1_CHECKLIST.md](docs/deliverables/PHASE1_CHECKLIST.md) | Phase 1 rubric checklist |
+| [Conceptions/PROJECT_CONCEPTION.md](Conceptions/PROJECT_CONCEPTION.md) | Team conception (aligned to student pack) |
 | [docs/FOLDER_STRUCTURE.md](docs/FOLDER_STRUCTURE.md) | What to put in each folder (data, code, deliverables) |
 
 ## Prerequisites
