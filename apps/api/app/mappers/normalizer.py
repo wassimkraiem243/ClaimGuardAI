@@ -1,10 +1,12 @@
 """Pure normalization helpers: no I/O, easy to unit-test."""
+import math
 import re
 from datetime import datetime
 from typing import Optional
 
 # Day-first formats are intentional (Tunisian / French exports): 02/06/2026 is 2 June.
 _DATE_FORMATS = ("%Y-%m-%d", "%d/%m/%Y", "%d-%m-%Y", "%Y/%m/%d", "%d.%m.%Y")
+MAX_ABS = 1e18  # sanity cap: far above any real claim amount
 _NUMBER = re.compile(r"^[+-]?\d+(\.\d+)?$")
 _SPACES = re.compile(r"[\s\u00a0\u202f]")  # regular, no-break and narrow no-break spaces
 
@@ -15,8 +17,7 @@ def norm_date(value: Optional[str]) -> Optional[str]:
     if value is None or not value.strip():
         return None
     v = value.strip()
-    if "T" in v:
-        v = v.split("T", 1)[0]
+    v = v.split("T", 1)[0].split(" ", 1)[0]  # drop a time part: ISO "T" or the space Excel uses
     for fmt in _DATE_FORMATS:
         try:
             return datetime.strptime(v, fmt).date().isoformat()
@@ -53,4 +54,7 @@ def norm_number(value: Optional[str]) -> float:
         v = v.replace(",", "") if v.count(",") > 1 else v.replace(",", ".")
     if not _NUMBER.match(v):
         raise ValueError(f"not a plain decimal number: {value!r}")
-    return float(v)
+    result = float(v)
+    if not math.isfinite(result) or abs(result) > MAX_ABS:
+        raise ValueError(f"number out of range: {value!r}")
+    return result
