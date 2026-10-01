@@ -35,11 +35,24 @@ export type RuleCatalogEntry = {
   version: string;
 };
 
+function formatIngestDetail(detail: unknown): string {
+  if (typeof detail === 'string') return detail;
+  if (!detail || typeof detail !== 'object') return JSON.stringify(detail);
+  const d = detail as Record<string, unknown>;
+  if (d.event === 'INGESTION_REJECTED' || d.reason) {
+    const parts = [String(d.reason ?? 'Ingestion rejected')];
+    if (d.field_path) parts.push(`(${d.field_path})`);
+    if (d.claim_id) parts.push(`claim: ${d.claim_id}`);
+    return parts.join(' ');
+  }
+  return JSON.stringify(detail, null, 2);
+}
+
 async function readError(response: Response): Promise<string> {
   try {
     const body = await response.json();
     if (body?.detail) {
-      return typeof body.detail === 'string' ? body.detail : JSON.stringify(body.detail);
+      return formatIngestDetail(body.detail);
     }
     return JSON.stringify(body);
   } catch {

@@ -32,6 +32,62 @@ function statusCounts(results: RuleResultRow[]) {
   return counts;
 }
 
+/** Matches rule_engine/reporting/findings.py claim-level outcome. */
+type ClaimOutcome = 'ISSUES_FOUND' | 'UNRESOLVED_CHECKS' | 'NO_ISSUES_DETECTED';
+
+function isAmbiguousRuleResult(r: RuleResultRow): boolean {
+  return r.status === 'UNABLE_TO_ASSESS' || r.status === 'NOT_IMPLEMENTED';
+}
+
+function deriveClaimOutcome(results: RuleResultRow[]): ClaimOutcome {
+  if (results.some((r) => r.status === 'FAIL')) return 'ISSUES_FOUND';
+  if (results.some(isAmbiguousRuleResult)) return 'UNRESOLVED_CHECKS';
+  return 'NO_ISSUES_DETECTED';
+}
+
+function needsMandatoryHumanReview(results: RuleResultRow[]): boolean {
+  return results.some(isAmbiguousRuleResult);
+}
+
+function humanReviewRoutingMessage(
+  outcome: ClaimOutcome,
+  failCount: number,
+  passCount: number,
+  humanReviewCount: number,
+): string {
+  if (humanReviewCount === 0) return '';
+  if (outcome === 'ISSUES_FOUND') {
+    return `Route to a human reviewer: ${humanReviewCount} ambiguous rule(s) sit alongside ${failCount} failure(s). Fix FAIL items, then have a reviewer assess the ambiguous rules before submit.`;
+  }
+  return `Route to a human reviewer: ${humanReviewCount} ambiguous rule(s) with ${passCount} passing check(s). Passing rules do not remove the need for human review on unresolved items.`;
+}
+
+const OUTCOME_DISPLAY: Record<
+  ClaimOutcome,
+  { title: string; sub: string; banner: string; bannerClass: string }
+> = {
+  ISSUES_FOUND: {
+    title: 'Failed',
+    sub: 'Deterministic rule failures',
+    banner: 'Issues found. Correct the failed rules before submission.',
+    bannerClass: 'border-critical/30 bg-critical/10 text-critical',
+  },
+  UNRESOLVED_CHECKS: {
+    title: 'Human review required',
+    sub: 'Ambiguous or incomplete checks (no proven FAIL)',
+    banner:
+      'At least one rule could not be decided automatically. A human must review these findings before submit.',
+    bannerClass: 'border-high/30 bg-high/10 text-high',
+  },
+  NO_ISSUES_DETECTED: {
+    title: 'Cleared',
+    sub: 'No issues from these checks',
+    banner:
+      'No issues detected by these payer rules. This is not a payer approval or clinical decision.',
+    bannerClass: 'border-success/30 bg-success/10 text-success',
+  },
+};
+
 function stepIndex(step: FlowStep): number {
   return STEPS.findIndex((s) => s.id === step);
 }
@@ -118,21 +174,44 @@ export function PreSubmissionFlow() {
     return map;
   }, [rules]);
 
-  const unresolved = useMemo(() => {
+  const failCount = useMemo(() => {
     if (!validation) return 0;
-    return validation.results.filter(
-      (r) => r.status === 'FAIL' || r.status === 'UNABLE_TO_ASSESS',
-    ).length;
+    return validation.results.filter((r) => r.status === 'FAIL').length;
   }, [validation]);
 
+  const humanReviewCount = useMemo(() => {
+    if (!validation) return 0;
+    return validation.results.filter(isAmbiguousRuleResult).length;
+  }, [validation]);
+
+  const mandatoryHumanReview = useMemo(
+    () => (validation ? needsMandatoryHumanReview(validation.results) : false),
+    [validation],
+  );
+
+  const claimOutcome = useMemo(
+    () => (validation ? deriveClaimOutcome(validation.results) : null),
+    [validation],
+  );
+
   const passCount = validation?.results.filter((r) => r.status === 'PASS').length ?? 0;
+
+  const outcomeBannerText = useMemo(() => {
+    if (!claimOutcome || !validation) return '';
+    return OUTCOME_DISPLAY[claimOutcome].banner;
+  }, [claimOutcome, validation]);
+
+  const humanReviewMessage = useMemo(() => {
+    if (!claimOutcome || !mandatoryHumanReview) return '';
+    return humanReviewRoutingMessage(claimOutcome, failCount, passCount, humanReviewCount);
+  }, [claimOutcome, mandatoryHumanReview, failCount, passCount, humanReviewCount]);
   const counts = validation ? statusCounts(validation.results) : null;
 
   const filteredResults = useMemo(() => {
     if (!validation) return [];
     if (resultFilter === 'all') return validation.results;
     return validation.results.filter(
-      (r) => r.status === 'FAIL' || r.status === 'UNABLE_TO_ASSESS',
+      (r) => r.status === 'FAIL' || isAmbiguousRuleResult(r),
     );
   }, [validation, resultFilter]);
 
@@ -301,10 +380,13 @@ export function PreSubmissionFlow() {
             <div>
               <h2 className="text-lg font-semibold text-text">1. Bring in a claim</h2>
               <p className="mt-1 text-sm text-text-muted">
-                Supported formats: <strong className="font-medium text-text">.jsonl</strong> (pack
-                envelope), <strong className="font-medium text-text">.zip</strong> (CSV pack),{' '}
-                <strong className="font-medium text-text">.json</strong> (FHIR or single envelope),
-                or legacy <strong className="font-medium text-text">.csv</strong>.
+                Use <strong className="font-medium text-text">claims.jsonl</strong> or{' '}
+                <strong className="font-medium text-text">fhir_bundles.jsonl</strong> from the pack, a
+                single envelope or FHIR bundle as <strong className="font-medium text-text">.json</strong>,
+                or zip the whole <strong className="font-medium text-text">csv/</strong> folder (all five
+                CSV files). Do not upload <strong className="font-medium text-text">claims.csv</strong>{' '}
+                alone; legacy wide <strong className="font-medium text-text">.csv</strong> is a separate
+                demo format.
               </p>
             </div>
             {claims.length > 0 && (
@@ -374,9 +456,11 @@ export function PreSubmissionFlow() {
                   Drop a file here or click to browse
                 </span>
                 <span className="mt-1 text-xs text-text-muted">
-                  Tip: use a row from{' '}
-                  <code className="rounded bg-surface px-1 font-mono">claims.jsonl</code> in the
-                  student pack
+                  Max 5 MB. Examples:{' '}
+                  <code className="rounded bg-surface px-1 font-mono">claims.jsonl</code>,{' '}
+                  <code className="rounded bg-surface px-1 font-mono">fhir_bundles.jsonl</code>, or{' '}
+                  <code className="rounded bg-surface px-1 font-mono">development.zip</code> (zipped
+                  csv folder)
                 </span>
               </label>
               <div className="mt-4 flex flex-wrap gap-2">
@@ -390,6 +474,10 @@ export function PreSubmissionFlow() {
               <label htmlFor="paste-json" className="text-sm font-medium text-text">
                 Claim envelope JSON
               </label>
+              <p className="mt-1 text-xs text-text-muted">
+                One normalized envelope only. For FHIR bundles, JSONL files, or CSV packs, use Upload
+                file.
+              </p>
               <textarea
                 id="paste-json"
                 value={pasteJson}
@@ -534,20 +622,58 @@ export function PreSubmissionFlow() {
               </p>
             ) : (
               <div className="mt-6 space-y-6">
+                {claimOutcome && (
+                  <div
+                    className={`rounded-2xl border px-5 py-4 ${OUTCOME_DISPLAY[claimOutcome].bannerClass}`}
+                    role="status"
+                  >
+                    <p className="text-sm font-semibold">{OUTCOME_DISPLAY[claimOutcome].title}</p>
+                    <p className="mt-1 text-sm opacity-90">{outcomeBannerText}</p>
+                  </div>
+                )}
+
+                {mandatoryHumanReview && humanReviewMessage && (
+                  <div
+                    className="rounded-2xl border border-high/30 bg-high/10 px-5 py-4 text-high"
+                    role="status"
+                  >
+                    <p className="text-sm font-semibold">Routed to human review</p>
+                    <p className="mt-1 text-sm opacity-90">{humanReviewMessage}</p>
+                  </div>
+                )}
+
                 <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+                  <StatCard label="Failed rules" value={failCount} sub="Clear FAIL (fix data)" />
                   <StatCard
-                    label="Needs attention"
-                    value={unresolved}
-                    sub="FAIL + unable to assess"
+                    label="Human review queue"
+                    value={humanReviewCount}
+                    sub={
+                      mandatoryHumanReview
+                        ? 'Ambiguity: must go to a reviewer'
+                        : 'No ambiguous rules'
+                    }
                   />
                   <StatCard label="Passed" value={passCount} />
                   <StatCard label="Duration" value={`${validation.run.duration_ms} ms`} />
-                  <StatCard
-                    label="Outcome"
-                    value={unresolved === 0 ? 'Ready' : 'Review'}
-                    sub={unresolved === 0 ? 'No blocking rules' : 'Fix before submit'}
-                  />
                 </div>
+
+                {claimOutcome && (
+                  <div className="rounded-2xl bg-surface-muted px-4 py-3 text-sm">
+                    <span className="font-medium text-text">Claim outcome: </span>
+                    <span className="font-semibold text-text">
+                      {OUTCOME_DISPLAY[claimOutcome].title}
+                    </span>
+                    <span className="text-text-muted"> · {OUTCOME_DISPLAY[claimOutcome].sub}</span>
+                    {mandatoryHumanReview && (
+                      <span className="text-text-muted">
+                        {' '}
+                        · <span className="font-medium text-high">Routed to human review</span> (
+                        {humanReviewCount} ambiguous rule
+                        {humanReviewCount === 1 ? '' : 's'})
+                      </span>
+                    )}
+                  </div>
+                )}
 
                 <div className="rounded-2xl bg-surface-muted px-4 py-3 text-xs text-text-muted">
                   <span className="font-medium text-text">Audit trail:</span> run{' '}
@@ -626,7 +752,16 @@ export function PreSubmissionFlow() {
                                 )}
                               </td>
                               <td className="px-5 py-4">
-                                <RuleStatusBadge status={r.status} />
+                                <div className="flex flex-col gap-2">
+                                  <RuleStatusBadge status={r.status} />
+                                  {isAmbiguousRuleResult(r) && (
+                                    <span
+                                      className="inline-flex w-fit items-center rounded-pill bg-high/15 px-3 py-1 text-xs font-semibold text-high"
+                                    >
+                                      Human review
+                                    </span>
+                                  )}
+                                </div>
                               </td>
                               <td className="max-w-md px-5 py-4 text-text-muted">
                                 <p>{r.explanation}</p>
