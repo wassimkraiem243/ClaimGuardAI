@@ -10,7 +10,8 @@ from pydantic import BaseModel
 
 from app.domain.claim_package import ClaimPackage, IngestionRejected
 from app.domain.finding import ValidationFinding
-from app.infrastructure.audit.jsonl_audit import JsonlAuditLog
+from app.domain.audit import AuditLog
+from app.infrastructure.audit.factory import get_audit_log
 from app.infrastructure.parsers.csv_parser import CsvClaimParser
 from app.infrastructure.parsers.fhir_parser import FhirClaimParser
 from app.infrastructure.parsers.preflight import InputRejected, check_fhir, prepare_csv, reject_duplicate_ids
@@ -57,7 +58,7 @@ def _select_parser(filename: str | None):
     raise HTTPException(415, "Unsupported file type: upload a .csv or a .json (FHIR Bundle)")
 
 
-async def _ingest(file: UploadFile, audit: JsonlAuditLog) -> tuple[list[ClaimPackage], InputMeta]:
+async def _ingest(file: UploadFile, audit: AuditLog) -> tuple[list[ClaimPackage], InputMeta]:
     fmt, parser = _select_parser(file.filename)
     raw = await file.read(MAX_BYTES + 1)
     if len(raw) > MAX_BYTES:
@@ -81,13 +82,13 @@ async def _ingest(file: UploadFile, audit: JsonlAuditLog) -> tuple[list[ClaimPac
 
 @router.post("/ingest", response_model=list[ClaimPackage])
 async def ingest(file: UploadFile = File(...)):
-    claims, _ = await _ingest(file, JsonlAuditLog())
+    claims, _ = await _ingest(file, get_audit_log())
     return claims
 
 
 @router.post("/ingest-and-evaluate", response_model=EvaluationResult)
 async def ingest_and_evaluate(file: UploadFile = File(...)):
-    audit = JsonlAuditLog()
+    audit = get_audit_log()
     claims, meta = await _ingest(file, audit)
     findings = EvaluateClaims(load_catalogue()).execute(claims)
     for f in findings:
@@ -110,11 +111,11 @@ async def ingest_and_evaluate(file: UploadFile = File(...)):
 
 @router.get("/audit")
 def read_audit(claim_id: Optional[str] = None):
-    return JsonlAuditLog().read(claim_id)
+    return get_audit_log().read(claim_id)
 
 
 @router.get("/audit/verify")
 def verify_audit():
-    audit = JsonlAuditLog()
+    audit = get_audit_log()
     ok, bad = audit.verify()
     return {"valid": ok, "first_invalid_seq": bad, "events": len(audit.read())}
