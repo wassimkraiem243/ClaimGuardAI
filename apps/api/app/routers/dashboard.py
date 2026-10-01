@@ -2,10 +2,9 @@ from fastapi import APIRouter, Depends
 from sqlalchemy.orm import Session
 
 from app.db.session import get_db
-from app.deps import require_api_key
 from app.services.dashboard import get_dashboard_overview, list_pipeline_runs
 
-router = APIRouter(prefix="/dashboard", tags=["dashboard"], dependencies=[Depends(require_api_key)])
+router = APIRouter(prefix="/dashboard", tags=["dashboard"])
 
 
 @router.get("/overview")

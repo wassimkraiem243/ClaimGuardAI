@@ -2,11 +2,10 @@ from fastapi import APIRouter, Depends, Query
 from sqlalchemy.orm import Session
 
 from app.db.session import get_db
-from app.deps import require_api_key
 from app.mappers.findings import finding_context_from_row, to_unified_finding
 from app.repositories.store import FindingRepository
 
-router = APIRouter(prefix="/findings", tags=["findings"], dependencies=[Depends(require_api_key)])
+router = APIRouter(prefix="/findings", tags=["findings"])
 
 
 @router.get("")

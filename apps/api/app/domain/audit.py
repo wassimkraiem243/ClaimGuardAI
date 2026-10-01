@@ -1,7 +1,8 @@
 from typing import Optional, Protocol
-
+from fastapi import APIRouter
 from pydantic import BaseModel
 
+router=APIRouter()
 
 class AuditEvent(BaseModel):
     seq: int
