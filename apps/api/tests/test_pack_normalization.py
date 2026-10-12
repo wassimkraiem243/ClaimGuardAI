@@ -1,4 +1,5 @@
 import io
+from app.config import settings
 import json
 import pathlib
 import zipfile
@@ -29,8 +30,8 @@ def _zip_csv_folder(folder: pathlib.Path) -> bytes:
 
 @pytest.fixture(autouse=True)
 def isolated_audit(tmp_path, monkeypatch):
-    monkeypatch.setenv("AUDIT_LOG", str(tmp_path / "audit.jsonl"))
-    monkeypatch.setenv("AUDIT_ENABLED", "0")
+    monkeypatch.setattr(settings, "audit_log_path", str(tmp_path / "audit.jsonl"))
+    monkeypatch.setattr(settings, "audit_enabled", False)
 
 
 @pytest.fixture(scope="module")

@@ -4,6 +4,7 @@ from pathlib import Path
 import pytest
 from fastapi.testclient import TestClient
 
+from app.config import settings
 from app.main import app
 
 ROOT = Path(__file__).resolve().parents[3]
@@ -28,8 +29,9 @@ def clean_claim():
 
 @pytest.fixture(autouse=True)
 def isolated_audit(tmp_path, monkeypatch):
-    monkeypatch.setenv("AUDIT_LOG", str(tmp_path / "audit.jsonl"))
-    monkeypatch.setenv("AUDIT_ENABLED", "1")
+    # settings (not env) decides the path: rule_validation._apply_audit_env() overwrites the env vars
+    monkeypatch.setattr(settings, "audit_log_path", str(tmp_path / "audit.jsonl"))
+    monkeypatch.setattr(settings, "audit_enabled", True)
 
 
 def test_validate_returns_15_results_and_run_metadata(client, clean_claim):
