@@ -17,9 +17,9 @@
     "missed_abstentions": 0,
     "claim_exact_match": 400,
     "latency_ms": {
-      "p50": 0.628800000413321,
-      "p95": 1.5101999997568782,
-      "max": 7.97959999908926
+      "p50": 0.8247999994637212,
+      "p95": 1.614000000699889,
+      "max": 56.69510000006994
     },
     "per_rule": {
       "R001": {
@@ -208,6 +208,218 @@
         "expected": "UNABLE_TO_ASSESS",
         "predicted": "UNABLE_TO_ASSESS",
         "count": 180
+      }
+    ]
+  },
+  {
+    "split": "validation",
+    "n_claims": 50,
+    "n_pairs": 750,
+    "missing_pairs": 0,
+    "extra_pairs": 0,
+    "micro": {
+      "precision": 1.0,
+      "recall": 1.0,
+      "f1": 1.0,
+      "false_alarm_rate": 0.0
+    },
+    "macro_f1": 0.9333333333333333,
+    "status_accuracy": 1.0,
+    "false_abstentions": 0,
+    "missed_abstentions": 0,
+    "claim_exact_match": 50,
+    "latency_ms": {
+      "p50": 0.6993000006332295,
+      "p95": 0.9828999991441378,
+      "max": 1.2904000013804762
+    },
+    "per_rule": {
+      "R001": {
+        "tp": 6,
+        "fp": 0,
+        "fn": 0,
+        "precision": 1.0,
+        "recall": 1.0,
+        "f1": 1.0,
+        "status_accuracy": 1.0,
+        "false_alarm_rate": 0.0,
+        "evidence_mismatch": 0
+      },
+      "R002": {
+        "tp": 1,
+        "fp": 0,
+        "fn": 0,
+        "precision": 1.0,
+        "recall": 1.0,
+        "f1": 1.0,
+        "status_accuracy": 1.0,
+        "false_alarm_rate": 0.0,
+        "evidence_mismatch": 0
+      },
+      "R003": {
+        "tp": 3,
+        "fp": 0,
+        "fn": 0,
+        "precision": 1.0,
+        "recall": 1.0,
+        "f1": 1.0,
+        "status_accuracy": 1.0,
+        "false_alarm_rate": 0.0,
+        "evidence_mismatch": 0
+      },
+      "R004": {
+        "tp": 4,
+        "fp": 0,
+        "fn": 0,
+        "precision": 1.0,
+        "recall": 1.0,
+        "f1": 1.0,
+        "status_accuracy": 1.0,
+        "false_alarm_rate": 0.0,
+        "evidence_mismatch": 0
+      },
+      "R005": {
+        "tp": 3,
+        "fp": 0,
+        "fn": 0,
+        "precision": 1.0,
+        "recall": 1.0,
+        "f1": 1.0,
+        "status_accuracy": 1.0,
+        "false_alarm_rate": 0.0,
+        "evidence_mismatch": 0
+      },
+      "R006": {
+        "tp": 8,
+        "fp": 0,
+        "fn": 0,
+        "precision": 1.0,
+        "recall": 1.0,
+        "f1": 1.0,
+        "status_accuracy": 1.0,
+        "false_alarm_rate": 0.0,
+        "evidence_mismatch": 0
+      },
+      "R007": {
+        "tp": 4,
+        "fp": 0,
+        "fn": 0,
+        "precision": 1.0,
+        "recall": 1.0,
+        "f1": 1.0,
+        "status_accuracy": 1.0,
+        "false_alarm_rate": 0.0,
+        "evidence_mismatch": 0
+      },
+      "R008": {
+        "tp": 1,
+        "fp": 0,
+        "fn": 0,
+        "precision": 1.0,
+        "recall": 1.0,
+        "f1": 1.0,
+        "status_accuracy": 1.0,
+        "false_alarm_rate": 0.0,
+        "evidence_mismatch": 0
+      },
+      "R009": {
+        "tp": 0,
+        "fp": 0,
+        "fn": 0,
+        "precision": null,
+        "recall": null,
+        "f1": null,
+        "status_accuracy": 1.0,
+        "false_alarm_rate": 0.0,
+        "evidence_mismatch": 0
+      },
+      "R010": {
+        "tp": 3,
+        "fp": 0,
+        "fn": 0,
+        "precision": 1.0,
+        "recall": 1.0,
+        "f1": 1.0,
+        "status_accuracy": 1.0,
+        "false_alarm_rate": 0.0,
+        "evidence_mismatch": 0
+      },
+      "R011": {
+        "tp": 2,
+        "fp": 0,
+        "fn": 0,
+        "precision": 1.0,
+        "recall": 1.0,
+        "f1": 1.0,
+        "status_accuracy": 1.0,
+        "false_alarm_rate": 0.0,
+        "evidence_mismatch": 0
+      },
+      "R012": {
+        "tp": 3,
+        "fp": 0,
+        "fn": 0,
+        "precision": 1.0,
+        "recall": 1.0,
+        "f1": 1.0,
+        "status_accuracy": 1.0,
+        "false_alarm_rate": 0.0,
+        "evidence_mismatch": 0
+      },
+      "R013": {
+        "tp": 5,
+        "fp": 0,
+        "fn": 0,
+        "precision": 1.0,
+        "recall": 1.0,
+        "f1": 1.0,
+        "status_accuracy": 1.0,
+        "false_alarm_rate": 0.0,
+        "evidence_mismatch": 0
+      },
+      "R014": {
+        "tp": 3,
+        "fp": 0,
+        "fn": 0,
+        "precision": 1.0,
+        "recall": 1.0,
+        "f1": 1.0,
+        "status_accuracy": 1.0,
+        "false_alarm_rate": 0.0,
+        "evidence_mismatch": 0
+      },
+      "R015": {
+        "tp": 1,
+        "fp": 0,
+        "fn": 0,
+        "precision": 1.0,
+        "recall": 1.0,
+        "f1": 1.0,
+        "status_accuracy": 1.0,
+        "false_alarm_rate": 0.0,
+        "evidence_mismatch": 0
+      }
+    },
+    "confusion": [
+      {
+        "expected": "FAIL",
+        "predicted": "FAIL",
+        "count": 47
+      },
+      {
+        "expected": "NOT_APPLICABLE",
+        "predicted": "NOT_APPLICABLE",
+        "count": 75
+      },
+      {
+        "expected": "PASS",
+        "predicted": "PASS",
+        "count": 600
+      },
+      {
+        "expected": "UNABLE_TO_ASSESS",
+        "predicted": "UNABLE_TO_ASSESS",
+        "count": 28
       }
     ]
   }

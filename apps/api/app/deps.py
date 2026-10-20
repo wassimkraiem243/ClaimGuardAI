@@ -1,11 +1,15 @@
-from fastapi import Header, HTTPException, status
+import hmac
+from dataclasses import dataclass
 
+from fastapi import Depends, Header, HTTPException, status
+from fastapi.security import OAuth2PasswordBearer
+
+from app import security
 from app.config import settings
 
-oauth2 = OAuth2PasswordBearer(tokenUrl="/auth/token")
+oauth2 = OAuth2PasswordBearer(tokenUrl="/auth/token", auto_error=False)
 
 
-# --- Ancien mécanisme (à retirer quand plus aucun routeur ne l'importe) ---
 def require_api_key(x_api_key: str | None = Header(default=None, alias="x-api-key")) -> None:
     if not x_api_key or not hmac.compare_digest(x_api_key, settings.api_key):
         raise HTTPException(
@@ -30,14 +34,13 @@ def _reviewer_table() -> dict[str, Principal]:
 
 
 def require_reviewer(x_api_key: str | None = Header(default=None, alias="x-api-key")) -> Principal:
-    """Authenticated human identity. The audit 'actor' comes from here, never from the request body."""
+    """Authenticated human identity. The audit actor comes from here, never from the request body."""
     for key, principal in _reviewer_table().items():
         if x_api_key and hmac.compare_digest(x_api_key, key):
             return principal
     raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Reviewer key required")
 
 
-# --- JWT + rôles ---
 def _unauthorized() -> HTTPException:
     return HTTPException(
         status.HTTP_401_UNAUTHORIZED,
@@ -46,15 +49,14 @@ def _unauthorized() -> HTTPException:
     )
 
 
-def get_current_user(token: str = Depends(oauth2)) -> dict:
-    secret = os.environ["CLAIMGUARD_JWT_SECRET"]
+def get_current_user(token: str | None = Depends(oauth2)) -> dict:
+    if not token:
+        raise _unauthorized()
     try:
-        payload = jwt.decode(token, secret, algorithms=["HS256"])
-    except jwt.PyJWTError:
+        claims = security.decode_token(token)
+    except security.AuthError:
         raise _unauthorized()
-    if not payload.get("sub") or not payload.get("role"):
-        raise _unauthorized()
-    return {"username": payload["sub"], "role": payload["role"]}
+    return {"username": claims["sub"], "role": claims["role"]}
 
 
 def require_authenticated(user: dict = Depends(get_current_user)) -> dict:

@@ -14,6 +14,7 @@ from app.mappers.findings import (
     to_unified_finding,
 )
 from app.repositories.analysis import FindingAnalysisRepository
+from app.infrastructure.safety import guard_analysis_fields
 from app.repositories.store import FindingRepository
 
 DEFAULT_RAG_CATEGORY = "payer-policy"
@@ -96,7 +97,7 @@ async def analyze_finding(
     ollama = OllamaClient()
     prompt = build_finding_analysis_prompt({**enriched, "narrative": ai_finding["narrative"]})
     raw, duration_ms, eval_count = await ollama.generate_json(prompt)
-    parsed = json.loads(raw)
+    parsed = guard_analysis_fields(json.loads(raw))
 
     now = datetime.now(timezone.utc)
     record = analysis_repo.upsert(

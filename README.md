@@ -64,6 +64,29 @@ API requests need header **`x-api-key: dev-local-key`** (default in `apps/api/.e
 
 Synthetic evaluation data: `data/evaluation/development/` (claims, expected results, CSV, FHIR bundles). Rule catalogue: `data/payer-rules/`.
 
+## Phase 2 — integration, benchmark, HITL, security
+
+| Deliverable | Location |
+|-------------|----------|
+| Evaluation report (F1, false-alarm rate, latency) | `docs/evaluation/EVALUATION_REPORT.md` (+ `metrics.json`) |
+| Privacy & security note | `docs/security/PRIVACY_AND_SECURITY.md` |
+| Validation split (50 claims) | `data/evaluation/validation/` (generate below) |
+| Reviewer routing & decisions | `POST /v1/reviews/route`, `POST /v1/reviews/decisions` (reviewer key) |
+
+Regenerate the validation split and evaluation report:
+
+```bash
+python scripts/materialize_validation_split.py
+cd apps/api
+python scripts/make_eval_report.py
+```
+
+HITL smoke test (after `npm run dev`):
+
+1. `POST /v1/validate` with a claim envelope (`x-api-key: dev-local-key`).
+2. `POST /v1/reviews/route` with the same envelope → inspect `queue` / `escalation_*`.
+3. `POST /v1/reviews/decisions` with `x-api-key: reviewer-dev-key` (see `.env.example`) and `original_status` matching the validated row.
+
 ## Tests
 
 ```bash

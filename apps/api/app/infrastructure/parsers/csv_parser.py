@@ -125,12 +125,12 @@ class CsvClaimParser:
         first = rows[0]
         return ClaimPackage(
             claim_id=cid, source="CSV",
-            patient=Patient(id=req(first, "patient_id"), birth_date=date(first, "birth_date"),
+            patient=Patient(id=req(first, "patient_id"), birth_date=dates["birth_date"],
                             gender=norm_text(first.get("gender"))),
-            encounter=Encounter(id=req(first, "encounter_id"), start=date(first, "encounter_start"),
-                                end=date(first, "encounter_end")),
+            encounter=Encounter(id=req(first, "encounter_id"), start=dates["encounter_start"],
+                                end=dates["encounter_end"]),
             coverage=Coverage(policy_id=req(first, "policy_id"), payer_id=norm_text(first.get("payer_id")),
-                              start=date(first, "coverage_start"), end=date(first, "coverage_end")),
+                              start=dates["coverage_start"], end=dates["coverage_end"]),
             provider=Provider(id=req(first, "provider_id"), npi=norm_text(first.get("provider_npi"))),
             diagnoses=[Diagnosis(code=c, primary=(i == 0)) for i, c in enumerate(codes)],
             lines=sorted(lines, key=lambda l: l.line_no),

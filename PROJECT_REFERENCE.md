@@ -55,9 +55,9 @@ Human reviewers (HITL)               ←    Escalate low confidence / high sever
 | P1 | Rule engine (15) | R001–R015; align with `rules/rules.json` + `engine_core.py` pattern |
 | P1 | Explainability (10) | One bounded `ExplanationProvider`; results match `result.schema.json` |
 | P1 | Audit log (10) | Hash-chained ledger + verify; diagrams in `docs/architecture/` |
-| P2 | Benchmark F1 (15) | `data/evaluation/benchmark/`, scripts under `scripts/` |
-| P2 | HITL (10) | `apps/web` review flows, override API |
-| P2 | Security (5) | `docs/security/`, API key guard, input validation, prompt guards |
+| P2 | Benchmark F1 (15) | `data/evaluation/validation/`, `apps/api/scripts/make_eval_report.py`, `docs/evaluation/EVALUATION_REPORT.md` |
+| P2 | HITL (10) | `/v1/reviews/route`, `/v1/reviews/decisions`, UI escalation copy in Phase 1 flow |
+| P2 | Security (5) | `docs/security/PRIVACY_AND_SECURITY.md`, API key + JWT RBAC, FHIR preflight, LLM guards |
 
 Bonus features: extra Python modules inside `apps/api`, WebSocket support, rule admin UI.
 

@@ -1,0 +1,6 @@
+{
+  "split": "validation",
+  "n_claims": 50,
+  "selection": "sorted claim_id, 50 evenly spaced indices over n=400",
+  "source": "data/evaluation/development"
+}

@@ -70,7 +70,7 @@ Runnable applications live under **`apps/`**. Shared frontend types live under *
 | `docs/deliverables/` | `PHASE1_CHECKLIST.md`, `WORK_PLAN.md`, `video/` (demo script/link) |
 | `docs/challenge/` | Official brief + reference material (`CSTAM_VELODOC_BRIEF.md`, `cstamBook.txt`) |
 | `docs/deliverables/video/` | Script/storyboard; link to hosted demo video |
-| `docs/security/` | Threat model, RBAC, data minimization, prompt safety |
+| `docs/security/` | `PRIVACY_AND_SECURITY.md` — threat model, RBAC, minimization, audit |
 | `docs/evaluation/` | Phase 2 metrics report (F1, FPR, latency) |
 
 ## Environment & secrets
