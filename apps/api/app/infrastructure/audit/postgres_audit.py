@@ -13,16 +13,23 @@ from sqlalchemy.engine import Engine
 from app.domain.audit import AuditEvent
 from app.infrastructure.audit.jsonl_audit import GENESIS, _digest
 
-DEFAULT_URL = "postgresql+psycopg://claimguard:claimguard_dev@localhost:55432/claimguard"
+DEFAULT_URL = "postgresql+psycopg://claimguard:claimguard@localhost:5433/claimguard"
 _LOCK_KEY = 727_001  # arbitrary app-wide constant for the audit chain
 _engines: dict[str, Engine] = {}
 
 
 def get_engine(url: Optional[str] = None) -> Engine:
-    url = url or os.environ.get("CLAIMGUARD_DATABASE_URL") or DEFAULT_URL
-    if url not in _engines:
-        _engines[url] = create_engine(url, pool_size=10, pool_pre_ping=True)
-    return _engines[url]
+    if url:
+        db_url = url
+    elif os.environ.get("CLAIMGUARD_DATABASE_URL"):
+        db_url = os.environ["CLAIMGUARD_DATABASE_URL"]
+    else:
+        from app.config import settings
+
+        db_url = settings.database_url
+    if db_url not in _engines:
+        _engines[db_url] = create_engine(db_url, pool_size=10, pool_pre_ping=True)
+    return _engines[db_url]
 
 
 class PostgresAuditLog:

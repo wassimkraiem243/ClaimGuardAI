@@ -22,13 +22,30 @@ export function clearStoredToken(): void {
 
 export async function loginAnalyst(username: string, password: string): Promise<void> {
   const body = new URLSearchParams({ username, password, grant_type: 'password' });
-  const response = await fetch(`${getApiBase()}/auth/token`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-    body,
-  });
+  let response: Response;
+  try {
+    response = await fetch(`${getApiBase()}/auth/token`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+      body,
+    });
+  } catch {
+    throw new Error(
+      'Cannot reach the API (connection failed). Is npm run dev running? Check the [api] terminal on port 4001.',
+    );
+  }
   if (!response.ok) {
     const text = await response.text();
+    if (text.includes('database_unavailable')) {
+      throw new Error(
+        'Database unavailable. Run: docker compose up -d, then python scripts/apply_migrations.py and scripts/seed.py',
+      );
+    }
+    if (text.includes('jwt_not_configured') || text.includes('CLAIMGUARD_JWT_SECRET')) {
+      throw new Error(
+        'Set CLAIMGUARD_JWT_SECRET (32+ characters) in apps/api/.env and restart npm run dev.',
+      );
+    }
     throw new Error(text.includes('detail') ? 'Invalid username or password' : text.slice(0, 200));
   }
   const data = (await response.json()) as { access_token: string };

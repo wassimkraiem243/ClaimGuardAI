@@ -103,6 +103,8 @@ export default function FindingsPage() {
             <label className="block text-sm">
               Username
               <input
+                name="username"
+                autoComplete="username"
                 value={username}
                 onChange={(e) => setUsername(e.target.value)}
                 className="mt-1 w-full rounded-xl border border-border px-3 py-2"
@@ -111,7 +113,9 @@ export default function FindingsPage() {
             <label className="block text-sm">
               Password
               <input
+                name="password"
                 type="password"
+                autoComplete="current-password"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 className="mt-1 w-full rounded-xl border border-border px-3 py-2"
@@ -120,7 +124,7 @@ export default function FindingsPage() {
             {loginError && <p className="text-sm text-critical">{loginError}</p>}
             <button
               type="submit"
-              className="rounded-2xl bg-primary px-4 py-2 text-sm font-medium text-on-primary"
+              className="cursor-pointer rounded-2xl bg-primary px-4 py-2 text-sm font-medium text-on-primary"
             >
               Sign in
             </button>
