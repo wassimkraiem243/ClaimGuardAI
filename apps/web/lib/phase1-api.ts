@@ -1,8 +1,26 @@
+const DEFAULT_API_ORIGIN = 'http://127.0.0.1:4001';
+
 function resolveApiBase(): string {
   const env = process.env.NEXT_PUBLIC_API_URL?.trim();
-  if (env) return env.replace(/\/$/, '');
+  if (env) {
+    const base = env.replace(/\/$/, '');
+    try {
+      const u = new URL(base);
+      const local = u.hostname === 'localhost' || u.hostname === '127.0.0.1';
+      if (local && u.port && u.port !== '4001') {
+        console.warn(
+          `[ClaimGuard] NEXT_PUBLIC_API_URL is ${base} but the API runs on port 4001. ` +
+            'Using /api proxy instead — fix apps/web/.env.local (clear NEXT_PUBLIC_API_URL or set http://127.0.0.1:4001).',
+        );
+        if (typeof window !== 'undefined') return '/api';
+      }
+    } catch {
+      /* relative or non-URL value */
+    }
+    return base;
+  }
   if (typeof window !== 'undefined') return '/api';
-  return 'http://127.0.0.1:4001';
+  return DEFAULT_API_ORIGIN;
 }
 
 const API_BASE_URL = resolveApiBase();
@@ -10,7 +28,16 @@ const API_BASE_URL = resolveApiBase();
 /** WebSocket must hit the API directly (Next rewrites do not upgrade WS). */
 function wsApiOrigin(): string {
   const env = process.env.NEXT_PUBLIC_API_URL?.trim();
-  const http = env || 'http://127.0.0.1:4001';
+  let http = env || DEFAULT_API_ORIGIN;
+  try {
+    const u = new URL(http);
+    const local = u.hostname === 'localhost' || u.hostname === '127.0.0.1';
+    if (local && u.port && u.port !== '4001') {
+      http = DEFAULT_API_ORIGIN;
+    }
+  } catch {
+    http = DEFAULT_API_ORIGIN;
+  }
   return http.replace(/\/$/, '').replace(/^http/, 'ws');
 }
 const API_KEY = process.env.NEXT_PUBLIC_API_KEY ?? 'dev-local-key';
