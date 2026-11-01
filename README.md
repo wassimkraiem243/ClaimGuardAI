@@ -39,7 +39,7 @@ cd ../..
 npm run dev
 ```
 
-**Postgres port (Windows):** Compose publishes Postgres on **5433** (same as `DATABASE_URL` in `apps/api/.env.example`). If `docker compose up` fails with *bind* / *access permissions*, another service may be using 5433 — stop it or set `ports: ["5434:5432"]` in `docker-compose.yml` and update `DATABASE_URL` accordingly. The pre-submission validate flow (ingest + R001–R015) does **not** require Postgres.
+**Postgres port (Windows):** Compose publishes Postgres on **5433** (same as `DATABASE_URL` in `apps/api/.env.example`). The DB image includes **pgvector** (required by SQL migration `20260714140845_add_ai_analysis_tables`). If `docker compose up` fails with *bind* / *access permissions*, another service may be using 5433 — stop it or set `ports: ["5434:5432"]` in `docker-compose.yml` and update `DATABASE_URL` accordingly. After changing the DB image, recreate the volume once: `docker compose down -v && docker compose up -d`. The pre-submission validate flow (ingest + R001–R015) does **not** require Postgres.
 
 | Service | URL |
 |---------|-----|

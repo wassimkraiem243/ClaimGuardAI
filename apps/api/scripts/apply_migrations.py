@@ -61,14 +61,14 @@ def _applied(conn) -> set[str]:
 
 def _apply_sql_migrations(engine) -> None:
     folders = sorted(p for p in MIGRATIONS_ROOT.iterdir() if p.is_dir())
-    with engine.begin() as conn:
-        _ensure_tracker(conn)
-        done = _applied(conn)
-        for folder in folders:
-            sql_file = folder / "migration.sql"
-            if not sql_file.exists():
-                continue
-            name = folder.name
+    for folder in folders:
+        sql_file = folder / "migration.sql"
+        if not sql_file.exists():
+            continue
+        name = folder.name
+        with engine.begin() as conn:
+            _ensure_tracker(conn)
+            done = _applied(conn)
             if name in done:
                 print(f"Skip {name} (already applied)")
                 continue
