@@ -22,6 +22,12 @@ import {
 
 type FlowStep = 'ingest' | 'review' | 'validate' | 'results';
 
+function formatUserError(err: unknown, fallback: string): string {
+  if (err instanceof Error && err.message.trim()) return err.message;
+  if (typeof err === 'string' && err.trim()) return err;
+  return fallback;
+}
+
 const STEPS: { id: FlowStep; label: string; hint: string }[] = [
   { id: 'ingest', label: 'Upload claim', hint: 'JSONL, ZIP, FHIR, or legacy CSV' },
   { id: 'review', label: 'Review envelope', hint: 'Confirm normalized claim data' },
@@ -239,7 +245,8 @@ export function PreSubmissionFlow() {
       setClaims(normalized);
       setSelectedIdx(0);
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Ingest failed');
+      console.error('Ingest failed', err);
+      setError(formatUserError(err, 'Ingest failed — see browser console for details.'));
       setClaims([]);
     } finally {
       setBusy(null);
@@ -395,9 +402,11 @@ export function PreSubmissionFlow() {
       )}
 
       {error && (
-        <Card className="mb-6 border border-critical/20">
+        <Card className="mb-6 border border-critical/20" role="alert">
           <p className="font-medium text-critical">Something went wrong</p>
-          <p className="mt-2 whitespace-pre-wrap font-mono text-xs text-text-muted">{error}</p>
+          <p className="mt-2 whitespace-pre-wrap break-words font-mono text-xs text-text-muted">
+            {error || 'Unknown error — open DevTools (F12) → Console for details.'}
+          </p>
         </Card>
       )}
 

@@ -1,5 +1,6 @@
 import hashlib
 import json
+import logging
 from collections import Counter
 from datetime import datetime, timezone
 from typing import Optional
@@ -15,6 +16,7 @@ from app.domain.finding import ValidationFinding
 from app.domain.normalized_claim import NormalizedClaim
 from app.infrastructure.audit.factory import get_audit_log
 from app.infrastructure import audit_log as pack_audit
+from app.infrastructure.audit_log import AuditError
 from app.infrastructure.parsers.csv_parser import CsvClaimParser
 from app.infrastructure.parsers.fhir_parser import FhirClaimParser
 from app.infrastructure.parsers.preflight import InputRejected, check_fhir, prepare_csv, reject_duplicate_ids
@@ -22,6 +24,8 @@ from app.infrastructure.repositories.factory import get_claim_repository
 from app.infrastructure.rules.catalogue import load_catalogue
 from app.services.evaluate_claims import EvaluateClaims
 from app.services.ingest_claim import IngestClaim, ingest_upload
+
+logger = logging.getLogger(__name__)
 
 MAX_BYTES = 5 * 1024 * 1024  # minimization / DoS guard
 SCHEMA_VERSION = "1.0"
@@ -112,26 +116,36 @@ async def ingest(file: UploadFile = File(...)):
     digest = hashlib.sha256(raw).hexdigest()
     try:
         if settings.audit_enabled:
-            pack_audit.append(
-                log,
-                [
-                    {
-                        "type": "FILE_RECEIVED",
-                        "file_role": "claims_upload",
-                        "file_name": name,
-                        "size_bytes": len(raw),
-                        "sha256": digest,
-                    }
-                ],
-            )
+            try:
+                settings.resolved_audit_log().parent.mkdir(parents=True, exist_ok=True)
+                pack_audit.append(
+                    log,
+                    [
+                        {
+                            "type": "FILE_RECEIVED",
+                            "file_role": "claims_upload",
+                            "file_name": name,
+                            "size_bytes": len(raw),
+                            "sha256": digest,
+                        }
+                    ],
+                )
+            except (AuditError, OSError) as audit_exc:
+                logger.warning("Ingest audit skipped (claim still accepted): %s", audit_exc)
         return ingest_upload(name, raw)
     except ValueError as e:
         if settings.audit_enabled:
-            pack_audit.log_ingestion_error("api:/claims/ingest", str(e), log=log)
+            try:
+                pack_audit.log_ingestion_error("api:/claims/ingest", str(e), log=log)
+            except (AuditError, OSError):
+                pass
         raise HTTPException(415, str(e)) from e
     except IngestionRejected as e:
         if settings.audit_enabled:
-            pack_audit.log_ingestion_error("api:/claims/ingest", e.reason, log=log)
+            try:
+                pack_audit.log_ingestion_error("api:/claims/ingest", e.reason, log=log)
+            except (AuditError, OSError):
+                pass
         raise HTTPException(400, detail=e.to_dict()) from e
 
 

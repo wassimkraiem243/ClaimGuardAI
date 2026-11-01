@@ -1,16 +1,17 @@
-import type { ReactNode } from 'react';
+import type { HTMLAttributes, ReactNode } from 'react';
 
 export function Card({
   children,
   className = '',
   id,
+  ...rest
 }: {
   children: ReactNode;
   className?: string;
   id?: string;
-}) {
+} & Omit<HTMLAttributes<HTMLDivElement>, 'className' | 'id'>) {
   return (
-    <div id={id} className={`rounded-2xl bg-surface p-6 shadow-float ${className}`}>
+    <div id={id} className={`rounded-2xl bg-surface p-6 shadow-float ${className}`} {...rest}>
       {children}
     </div>
   );

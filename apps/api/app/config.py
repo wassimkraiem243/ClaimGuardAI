@@ -14,7 +14,7 @@ class Settings(BaseSettings):
     api_key: str = "dev-local-key"
     # "key:actor:role,..." — role reviewer|admin. Reviews are refused unless the caller holds one of these keys.
     reviewer_keys: str = ""
-    cors_origins: str = "http://localhost:3000"  # comma-separated; never "*" with credentials
+    cors_origins: str = "http://localhost:3000,http://localhost:4000,http://127.0.0.1:4000"
     port: int = 4001
     ollama_base_url: str = "http://localhost:11434"
     ollama_model: str = "qwen2.5:14b-instruct-q4_K_M"

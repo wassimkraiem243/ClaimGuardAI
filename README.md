@@ -52,6 +52,24 @@ Copy `apps/web/.env.example` to `apps/web/.env.local` and set `NEXT_PUBLIC_REVIE
 
 API requests need header **`x-api-key: dev-local-key`** (default in `apps/api/.env` and `NEXT_PUBLIC_API_KEY` for the web app).
 
+### Start the backend (API only)
+
+From repo root (after `apps/api` venv + `pip install -r requirements.txt` + `copy .env.example .env`):
+
+```bash
+npm run dev:api
+```
+
+Check:
+
+| URL | Expected |
+|-----|----------|
+| http://localhost:4001/ | JSON with links to `/docs`, `/health`, ingest/validate paths |
+| http://localhost:4001/health | `{"status":"ok"}` |
+| http://localhost:4001/docs | Swagger UI |
+
+`{"detail":"Not Found"}` on a random path is normal. Upload **claims** through the **web UI** at http://localhost:4000 (run `npm run dev` for UI + API), or `POST http://localhost:4001/claims/ingest` with header `x-api-key: dev-local-key` and form field `file` (use `data/evaluation/development/claims.jsonl`, not a lone `claims.csv`).
+
 ### Phase 1 user flow (UI)
 
 1. Open **Validate claim** in the sidebar.

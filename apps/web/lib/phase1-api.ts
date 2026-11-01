@@ -1,4 +1,18 @@
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:4001';
+function resolveApiBase(): string {
+  const env = process.env.NEXT_PUBLIC_API_URL?.trim();
+  if (env) return env.replace(/\/$/, '');
+  if (typeof window !== 'undefined') return '/api';
+  return 'http://127.0.0.1:4001';
+}
+
+const API_BASE_URL = resolveApiBase();
+
+/** WebSocket must hit the API directly (Next rewrites do not upgrade WS). */
+function wsApiOrigin(): string {
+  const env = process.env.NEXT_PUBLIC_API_URL?.trim();
+  const http = env || 'http://127.0.0.1:4001';
+  return http.replace(/\/$/, '').replace(/^http/, 'ws');
+}
 const API_KEY = process.env.NEXT_PUBLIC_API_KEY ?? 'dev-local-key';
 const REVIEWER_API_KEY = process.env.NEXT_PUBLIC_REVIEWER_API_KEY ?? '';
 
@@ -86,7 +100,7 @@ function formatIngestDetail(detail: unknown): string {
   if (!detail || typeof detail !== 'object') return JSON.stringify(detail);
   const d = detail as Record<string, unknown>;
   if (d.event === 'INGESTION_REJECTED' || d.reason) {
-    const parts = [String(d.reason ?? 'Ingestion rejected')];
+    const parts = [String(d.reason ?? d.event ?? 'Ingestion rejected')];
     if (d.field_path) parts.push(`(${d.field_path})`);
     if (d.claim_id) parts.push(`claim: ${d.claim_id}`);
     return parts.join(' ');
@@ -95,14 +109,21 @@ function formatIngestDetail(detail: unknown): string {
 }
 
 async function readError(response: Response): Promise<string> {
+  const text = await response.text();
+  if (!text.trim()) {
+    return `${response.status} ${response.statusText || 'Error'}`.trim();
+  }
   try {
-    const body = await response.json();
-    if (body?.detail) {
+    const body = JSON.parse(text) as { detail?: unknown; message?: string };
+    if (body?.detail !== undefined) {
       return formatIngestDetail(body.detail);
     }
-    return JSON.stringify(body);
+    if (body?.message) {
+      return String(body.message);
+    }
+    return text.length > 2000 ? `${text.slice(0, 2000)}…` : text;
   } catch {
-    return response.statusText;
+    return text.length > 2000 ? `${text.slice(0, 2000)}…` : text;
   }
 }
 
@@ -114,11 +135,20 @@ function apiHeaders(reviewer = false): HeadersInit {
 export async function ingestClaimFile(file: File): Promise<NormalizedClaim[]> {
   const form = new FormData();
   form.append('file', file);
-  const response = await fetch(`${API_BASE_URL}/claims/ingest`, {
-    method: 'POST',
-    headers: apiHeaders(),
-    body: form,
-  });
+  let response: Response;
+  try {
+    response = await fetch(`${API_BASE_URL}/claims/ingest`, {
+      method: 'POST',
+      headers: apiHeaders(),
+      body: form,
+    });
+  } catch (networkErr) {
+    const hint =
+      networkErr instanceof Error ? networkErr.message : String(networkErr);
+    throw new Error(
+      `Cannot reach the API (${API_BASE_URL}). Start the backend with npm run dev:api from the repo root. ${hint}`,
+    );
+  }
   if (!response.ok) {
     throw new Error(`Ingest failed (${response.status}): ${await readError(response)}`);
   }
@@ -151,8 +181,7 @@ export function validateClaimStreaming(
     onError: (message: string) => void;
   },
 ): () => void {
-  const wsBase = API_BASE_URL.replace(/^http/, 'ws');
-  const url = `${wsBase}/v1/ws/validate?api_key=${encodeURIComponent(API_KEY)}`;
+  const url = `${wsApiOrigin()}/v1/ws/validate?api_key=${encodeURIComponent(API_KEY)}`;
   const ws = new WebSocket(url);
   let closed = false;
 
