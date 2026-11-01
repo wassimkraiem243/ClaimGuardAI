@@ -3,10 +3,14 @@ from pathlib import Path
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 _REPO_ROOT = Path(__file__).resolve().parents[3]
+_API_ROOT = Path(__file__).resolve().parents[1]
 
 
 class Settings(BaseSettings):
-    model_config = SettingsConfigDict(env_file=".env", extra="ignore")
+    model_config = SettingsConfigDict(
+        env_file=str(_API_ROOT / ".env"),
+        extra="ignore",
+    )
 
     database_url: str = (
         "postgresql+psycopg://claimguard:claimguard@localhost:5433/claimguard"
@@ -14,6 +18,7 @@ class Settings(BaseSettings):
     api_key: str = "dev-local-key"
     # "key:actor:role,..." — role reviewer|admin. Reviews are refused unless the caller holds one of these keys.
     reviewer_keys: str = ""
+    claimguard_jwt_secret: str = ""
     cors_origins: str = "http://localhost:3000,http://localhost:4000,http://127.0.0.1:4000"
     port: int = 4001
     ollama_base_url: str = "http://localhost:11434"

@@ -16,8 +16,10 @@ _SCRYPT = dict(n=2**14, r=8, p=1, dklen=32)
 
 
 def _secret() -> str:
-    s = os.environ.get("CLAIMGUARD_JWT_SECRET")
-    if not s or len(s) < 32:
+    from app.config import settings
+
+    s = (settings.claimguard_jwt_secret or os.environ.get("CLAIMGUARD_JWT_SECRET") or "").strip()
+    if len(s) < 32:
         raise RuntimeError("CLAIMGUARD_JWT_SECRET must be set (at least 32 characters)")
     return s
 
