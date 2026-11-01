@@ -1,112 +1,186 @@
 # ClaimGuard AI
 
-Human-supervised agentic copilot for **healthcare claim pre-validation** (CSTAM-VELODOC × Velodoc Amazit).
+Human-supervised agentic copilot for **healthcare claim pre-validation** (CSTAM-VELODOC, Velodoc Amazit).
 
-Monorepo: **FastAPI** (`apps/api`), **Next.js** (`apps/web`), shared DTOs (`packages/shared-types`), Postgres (pgvector). Ingest synthetic claims (JSONL, pack CSV zip, FHIR), normalize to the teaching claim envelope, run **R001–R015**, optional LLM on seeded dashboard findings.
+The system ingests **synthetic** claim packages, normalizes them to a teaching envelope, runs payer rules **R001-R015**, produces structured explanations and corrective actions, routes ambiguous cases to human reviewers, and records a **hash-chained audit log**. Optional **Ollama** powers plain-language analysis on the JWT findings dashboard.
 
-Details for developers: [PROJECT_REFERENCE.md](PROJECT_REFERENCE.md) · Challenge brief: [docs/challenge/CSTAM_VELODOC_BRIEF.md](docs/challenge/CSTAM_VELODOC_BRIEF.md)
+**Stack:** FastAPI (`apps/api`), Next.js (`apps/web`), shared types (`packages/shared-types`), PostgreSQL with pgvector for dashboard and AI storage.
+
+Further reading: [PROJECT_REFERENCE.md](PROJECT_REFERENCE.md) | [Challenge brief](docs/challenge/CSTAM_VELODOC_BRIEF.md) | [Jury demo walkthrough](docs/SHOWCASE.md)
+
+---
+
+## What is in the web app
+
+| Page | URL | Purpose |
+|------|-----|---------|
+| Validate claim | http://localhost:4000 | Ingest, envelope review, R001-R015, WebSocket streaming, HITL, per-claim audit panel |
+| Audit and export | http://localhost:4000/audit | Global chain verify, human override export (JSON/CSV) |
+| Benchmark metrics | http://localhost:4000/evaluation | Phase 2 splits (F1, latency, per-rule stats) |
+| AI findings (demo) | http://localhost:4000/findings | JWT login, seeded findings, **Run AI explain** (Ollama) |
+| Architecture docs | http://localhost:4000/guides | Links to markdown documentation |
+
+The browser calls the API through **`/api`** (Next.js proxy to port **4001**). Do not point `NEXT_PUBLIC_API_URL` at the wrong port; leave it unset in `apps/web/.env.local` when possible.
+
+---
 
 ## Prerequisites
 
-- Node.js ≥ 18, npm 10+
-- Python ≥ 3.11
-- Docker or Podman (Postgres for dashboard / seed data)
-- Optional: [Ollama](https://ollama.com) for LLM finding analysis on `/findings`
+- Node.js 18+ and npm 10+
+- Python 3.11+
+- Docker or Podman (PostgreSQL; required for `/findings`, JWT login, and seed data)
+- Optional: [Ollama](https://ollama.com) for live LLM explanations
 
-## Install and run
+**Ports:** web **4000**, API **4001**, Postgres **5433** (see `docker-compose.yml`).
 
-From the repository root:
+---
+
+## Installation
+
+Run from the **repository root**.
+
+### 1. Node and Python
 
 ```bash
 npm install
+```
 
-docker compose up -d
-
+```bash
 cd apps/api
 python -m venv .venv
-# Windows:
-.venv\Scripts\activate
-# macOS/Linux:
-# source .venv/bin/activate
+```
 
-copy .env.example .env
-docker compose up -d
+**Windows (PowerShell):**
+
+```powershell
+.\.venv\Scripts\Activate.ps1
+Copy-Item .env.example .env
 pip install -r requirements.txt
+```
+
+**macOS / Linux:**
+
+```bash
+source .venv/bin/activate
+cp .env.example .env
+pip install -r requirements.txt
+```
+
+Edit **`apps/api/.env`**: set **`CLAIMGUARD_JWT_SECRET`** to at least **32 characters**. Defaults for local dev are in `.env.example` (`API_KEY`, `REVIEWER_KEYS`, `DATABASE_URL`, `OLLAMA_*`).
+
+### 2. PostgreSQL (dashboard + demo user)
+
+From the repo root:
+
+```bash
+docker compose up -d
+```
+
+Then:
+
+```bash
+cd apps/api
 python scripts/apply_migrations.py
 python scripts/seed.py
 cd ../..
+```
 
+Seed creates demo findings and user **`demo`** / **`claimguard-demo!`** (analyst). Check **`http://127.0.0.1:4001/health`**: `jwt_configured` should be `true` when the secret is loaded.
+
+**Note:** Ingest and validation (**R001-R015**) work **without** Postgres. Postgres is required for `/findings`, JWT sign-in, and stored AI analysis.
+
+**Windows bind errors on 5433:** stop the conflicting service or change the host port in `docker-compose.yml` and `DATABASE_URL`. After changing the DB image, recreate the volume once: `docker compose down -v && docker compose up -d`.
+
+### 3. Web environment
+
+```bash
+copy apps\web\.env.example apps\web\.env.local
+```
+
+(on macOS/Linux: `cp apps/web/.env.example apps/web/.env.local`)
+
+Set **`NEXT_PUBLIC_REVIEWER_API_KEY=reviewer-dev-key`** so HITL override buttons work (must match **`REVIEWER_KEYS`** on the API).
+
+### 4. Start development
+
+```bash
 npm run dev
 ```
 
-**Postgres port (Windows):** Compose publishes Postgres on **5433** (same as `DATABASE_URL` in `apps/api/.env.example`). The DB image includes **pgvector** (required by SQL migration `20260714140845_add_ai_analysis_tables`). If `docker compose up` fails with *bind* / *access permissions*, another service may be using 5433 — stop it or set `ports: ["5434:5432"]` in `docker-compose.yml` and update `DATABASE_URL` accordingly. After changing the DB image, recreate the volume once: `docker compose down -v && docker compose up -d`. The pre-submission validate flow (ingest + R001–R015) does **not** require Postgres.
+This starts the API and web together. API only: **`npm run dev:api`**.
+
+---
+
+## Service URLs
 
 | Service | URL |
 |---------|-----|
 | Web UI | http://localhost:4000 |
-| API (OpenAPI) | http://localhost:4001/docs |
-| Pre-submission flow | http://localhost:4000/ |
-| Audit & feedback | http://localhost:4000/audit |
-| AI findings (JWT demo) | http://localhost:4000/findings |
+| API root | http://127.0.0.1:4001 |
+| OpenAPI | http://localhost:4001/docs |
+| Health (incl. JWT diagnostics) | http://127.0.0.1:4001/health |
 
-**Jury demo script:** [docs/SHOWCASE.md](docs/SHOWCASE.md)
+API requests use header **`x-api-key: dev-local-key`** unless you change **`API_KEY`** in `apps/api/.env`.
 
-Copy `apps/web/.env.example` to `apps/web/.env.local` and set `NEXT_PUBLIC_REVIEWER_API_KEY=reviewer-dev-key` to enable override buttons in the UI.
+---
 
-API requests need header **`x-api-key: dev-local-key`** (default in `apps/api/.env` and `NEXT_PUBLIC_API_KEY` for the web app).
 
-### Start the backend (API only)
 
-From repo root (after `apps/api` venv + `pip install -r requirements.txt` + `copy .env.example .env`):
 
-```bash
-npm run dev:api
-```
 
-Check:
+## Ingest formats
 
-| URL | Expected |
-|-----|----------|
-| http://localhost:4001/ | JSON with links to `/docs`, `/health`, ingest/validate paths |
-| http://localhost:4001/health | `{"status":"ok"}` |
-| http://localhost:4001/docs | Swagger UI |
+| Upload | Format |
+|--------|--------|
+| **`claims.jsonl`** | One teaching envelope per line (recommended for demos) |
+| **`fhir_bundles.jsonl`** | Pack FHIR bundles |
+| **`.zip`** | All five pack CSVs: `claims.csv`, `coverage.csv`, `lines.csv`, `authorizations.csv`, `attachments.csv` (see `data/evaluation/development/csv/`) |
+| **`.json`** | Single pack envelope or FHIR Bundle |
+| **Legacy wide `.csv`** | e.g. `data/synthetic-claims/csv/valid_sample.csv` (not pack `claims.csv`) |
 
-`{"detail":"Not Found"}` on a random path is normal. Upload **claims** through the **web UI** at http://localhost:4000 (run `npm run dev` for UI + API), or `POST http://localhost:4001/claims/ingest` with header `x-api-key: dev-local-key` and form field `file` (use `data/evaluation/development/claims.jsonl`, not a lone `claims.csv`).
+Do **not** upload pack **`claims.csv` alone**. Zip the full **`csv/`** folder or use **JSONL**.
 
-### Phase 1 user flow (UI)
+Sample data: **`data/evaluation/development/`** (claims, expected results, CSV, FHIR). Rules: **`data/payer-rules/`**.
 
-1. Open **Validate claim** in the sidebar.
-2. **Ingest** a file: `.jsonl` (pack envelope), `.zip` (pack `csv/` folder), or `.json` (pack FHIR bundle / single envelope).
-3. Review the normalized **envelope**, then **Run validation** → 15 rule results (optional WebSocket streaming).
-4. Use **Human-in-the-loop** controls to confirm/dismiss findings; open **Audit trail** for hash-chain verification.
-5. Optional: JWT dashboard at `/findings` for seeded findings + LLM explain (Ollama).
+---
 
-### API-only (curl / Swagger)
+## Optional: Ollama (AI explain on `/findings`)
 
-| Step | Method | Path |
-|------|--------|------|
-| Ingest | `POST` | `/claims/ingest` (multipart `file`) |
-| Validate | `POST` | `/v1/validate` body `{ "claim": <envelope> }` |
-| Stream validate | WebSocket | `/v1/ws/validate?api_key=…` |
-| Audit trace | `GET` | `/v1/audit/trace?claim_id=` |
-| Audit verify | `GET` | `/v1/audit/verify` |
-| HITL route | `POST` | `/v1/reviews/route` |
-| HITL decision | `POST` | `/v1/reviews/decisions` (reviewer key) |
-| Rules | `GET` | `/v1/rules` |
-| Policy | `GET` | `/v1/policies/{policy_id}` |
+1. Install and run Ollama.
+2. Pull models matching **`apps/api/.env`** (e.g. chat model + **`nomic-embed-text`** for embeddings).
+3. Restart **`npm run dev`**.
 
-Synthetic evaluation data: `data/evaluation/development/` (claims, expected results, CSV, FHIR bundles). Rule catalogue: `data/payer-rules/`.
+If Ollama is off, validation, audit, and benchmark still work; **Run AI explain** will fail until Ollama is available.
 
-## Phase 2 — integration, benchmark, HITL, security
+---
 
-| Deliverable | Location |
-|-------------|----------|
-| Evaluation report (F1, false-alarm rate, latency) | `docs/evaluation/EVALUATION_REPORT.md` (+ `metrics.json`) |
-| Privacy & security note | `docs/security/PRIVACY_AND_SECURITY.md` |
-| Validation split (50 claims) | `data/evaluation/validation/` (generate below) |
-| Reviewer routing & decisions | `POST /v1/reviews/route`, `POST /v1/reviews/decisions` (reviewer key) |
+## API reference (short)
 
-Regenerate the validation split and evaluation report:
+| Action | Method | Path |
+|--------|--------|------|
+| Ingest | POST | `/claims/ingest` (multipart `file`) |
+| Validate | POST | `/v1/validate` body `{ "claim": <envelope> }` |
+| Stream rules | WebSocket | `/v1/ws/validate?api_key=…` |
+| Audit trace | GET | `/v1/audit/trace?claim_id=` |
+| Audit verify | GET | `/v1/audit/verify` |
+| Human feedback export | GET | `/v1/audit/feedback` |
+| HITL route | POST | `/v1/reviews/route` |
+| HITL decision | POST | `/v1/reviews/decisions` (reviewer key) |
+| Rule catalog | GET | `/v1/rules` |
+| JWT token | POST | `/auth/token` |
+| Finding analysis | POST | `/analysis/findings/{id}` |
+
+---
+
+## Phase 2 deliverables
+
+| Topic | Location |
+|-------|----------|
+| Evaluation report | `docs/evaluation/EVALUATION_REPORT.md` |
+| Privacy and security | `docs/security/PRIVACY_AND_SECURITY.md` |
+| Validation split | `data/evaluation/validation/` |
+
+Regenerate metrics:
 
 ```bash
 python scripts/materialize_validation_split.py
@@ -114,11 +188,19 @@ cd apps/api
 python scripts/make_eval_report.py
 ```
 
-HITL smoke test (after `npm run dev`):
+---
 
-1. `POST /v1/validate` with a claim envelope (`x-api-key: dev-local-key`).
-2. `POST /v1/reviews/route` with the same envelope → inspect `queue` / `escalation_*`.
-3. `POST /v1/reviews/decisions` with `x-api-key: reviewer-dev-key` (see `.env.example`) and `original_status` matching the validated row.
+## Bonus features (implemented)
+
+These align with the CSTAM bonus list where applicable:
+
+- **Hash-chained audit log** with verify API and UI export of human overrides (active learning dataset, not auto-retrain).
+- **WebSocket** validation stream on the validate page.
+- **JWT dashboard** and **Ollama** explanations on seeded findings (administrative guards, no clinical advice).
+
+Not implemented: PDF/OCR clinical notes, dynamic payer-rule editor GUI, full automated retraining pipeline.
+
+---
 
 ## Tests
 
@@ -128,22 +210,25 @@ cd apps/api
 python -m pytest tests/ -q
 ```
 
-Pack gold scoring (optional): generate predictions with the rule engine, then use the official pack `src/evaluate.py` against `data/evaluation/development/expected_results.jsonl` (see pack doc `06_Setup_and_First_Run.md`).
+(macOS/Linux: `source .venv/bin/activate`)
+
+---
 
 ## Repository layout
 
 ```
-apps/api/          FastAPI — ingest, rule engine, validation, audit hook
-apps/web/          Next.js — dashboard, findings, Phase 1 flow
+apps/api/          FastAPI: ingest, rule engine, validation, audit, JWT, analysis
+apps/web/          Next.js: validate flow, audit, benchmark, findings, guides
 packages/shared-types/
-data/              synthetic claims, payer-rules, evaluation splits
-docs/              challenge brief, ingestion data-flow (public)
+data/              synthetic claims, payer rules, evaluation splits
+docs/              challenge brief, showcase, evaluation, security
+outputs/           local audit log (gitignored)
 ```
 
-Root **`npm run dev`** starts API (4001) and web (4000). Python dependencies are **not** npm workspaces — install `apps/api/requirements.txt` separately.
+Do not commit **`apps/api/.env`**, **`apps/web/.env.local`**, **`outputs/`**, or real patient data.
 
-Do not commit `apps/api/.env`, `outputs/`, or real patient data.
+---
 
-## License / data
+## Data and license
 
 Use only **synthetic** claim data in this repository unless Velodoc provides explicit datasets and sharing rules.
