@@ -40,9 +40,11 @@ Human reviewers (HITL)               ←    Escalate low confidence / high sever
 |------|--------|
 | Repo layout (npm workspaces + FastAPI + Next.js + Postgres) | **Ready** — layered API in `apps/api/ARCHITECTURE.md` |
 | CSV + FHIR ingest → `ClaimPackage` | **Ready** — `POST /claims/ingest`; samples in `data/synthetic-claims/`; tests in `apps/api/tests/` |
-| JSONL claim envelope (student pack) | **Not started** — separate adapter when rules align on pack schema |
-| Payer rule engine & audit log | **In progress** — reject audit on ingest still TODO in `routers/claims.py` |
-| UI labels (ClaimGuard branding) | **Partial** — validation UI at `/findings` (rename planned) |
+| JSONL claim envelope (student pack) | **Ready** — pack ingest via `ingest_upload` |
+| Payer rule engine & audit log | **Ready** — R001–R015, hash-chained `outputs/audit.jsonl`, `/v1/audit/*` |
+| HITL review UI | **Ready** — `/v1/reviews/route`, decisions, `HumanReviewPanel` in web |
+| WebSocket validation stream | **Ready** — `/v1/ws/validate` |
+| UI labels (ClaimGuard branding) | **Ready** — pre-submission flow at `/` + audit at `/audit` |
 | Dashboard & LLM finding analysis | **Ready** — FastAPI + Next.js shell |
 
 ---

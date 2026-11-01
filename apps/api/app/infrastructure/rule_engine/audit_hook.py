@@ -15,7 +15,7 @@ from __future__ import annotations
 
 import os
 from functools import lru_cache
-from typing import Optional
+from typing import Callable, Optional
 
 from app.infrastructure import audit_log as audit
 from app.infrastructure.audit_log import AuditError  # re-exported for routers
@@ -23,7 +23,7 @@ from app.infrastructure.audit_log import AuditError  # re-exported for routers
 from .config import REPO_ROOT, RULES_DIR  # noqa: E402
 from .core.engine import IngestionError, check_envelope, validate_claim  # noqa: E402
 from .domain.policy import Policy  # noqa: E402
-from .domain.result import ValidationResponse  # noqa: E402
+from .domain.result import RuleResult, ValidationResponse  # noqa: E402
 from .stores.policy_store import PolicyStore  # noqa: E402
 from .version import ENGINE_VERSION  # noqa: E402
 
@@ -51,7 +51,8 @@ def rule_versions(policy_override: Optional[Policy] = None) -> dict:
 def audited_validate(raw: dict, store: PolicyStore,
                      policy_override: Optional[Policy] = None,
                      source: str = "api",
-                     previous_run: Optional[tuple] = None) -> ValidationResponse:
+                     previous_run: Optional[tuple] = None,
+                     on_rule: Optional[Callable[[RuleResult], None]] = None) -> ValidationResponse:
     """Validate one claim and write its audit trail. `raw` should be the original envelope;
     audit hashes its canonical JSON (same value as run.input_hash in the response)."""
     if not enabled():
@@ -67,7 +68,7 @@ def audited_validate(raw: dict, store: PolicyStore,
                                   previous_run=previous_run, log=log)
     audit.log_attachments(run_id, raw, log=log)  # hash + length only, never the text
     try:
-        resp = validate_claim(raw, store, policy_override, run_id=run_id)
+        resp = validate_claim(raw, store, policy_override, run_id=run_id, on_rule=on_rule)
     except Exception as exc:
         audit.run_failed(run_id, claim_id, type(exc).__name__, log=log)
         raise

@@ -42,16 +42,20 @@ npm run dev
 |---------|-----|
 | Web UI | http://localhost:4000 |
 | API (OpenAPI) | http://localhost:4001/docs |
-| **Phase 1 demo flow** | http://localhost:4000/phase1 |
+| Pre-submission flow | http://localhost:4000/ |
+| Audit & feedback | http://localhost:4000/audit |
+
+Copy `apps/web/.env.example` to `apps/web/.env.local` and set `NEXT_PUBLIC_REVIEWER_API_KEY=reviewer-dev-key` to enable override buttons in the UI.
 
 API requests need header **`x-api-key: dev-local-key`** (default in `apps/api/.env` and `NEXT_PUBLIC_API_KEY` for the web app).
 
 ### Phase 1 user flow (UI)
 
-1. Open **Phase 1 flow** in the sidebar.
+1. Open **Validate claim** in the sidebar.
 2. **Ingest** a file: `.jsonl` (pack envelope), `.zip` (pack `csv/` folder), or `.json` (pack FHIR bundle / single envelope).
-3. Review the normalized **envelope**, then **Run validation** → 15 rule results.
-4. Optional: **Load rule catalog**; use **Validations** (`/findings`) for seeded findings + LLM explain (Ollama).
+3. Review the normalized **envelope**, then **Run validation** → 15 rule results (optional WebSocket streaming).
+4. Use **Human-in-the-loop** controls to confirm/dismiss findings; open **Audit trail** for hash-chain verification.
+5. Optional: JWT dashboard at `/findings` for seeded findings + LLM explain (Ollama).
 
 ### API-only (curl / Swagger)
 
@@ -59,6 +63,11 @@ API requests need header **`x-api-key: dev-local-key`** (default in `apps/api/.e
 |------|--------|------|
 | Ingest | `POST` | `/claims/ingest` (multipart `file`) |
 | Validate | `POST` | `/v1/validate` body `{ "claim": <envelope> }` |
+| Stream validate | WebSocket | `/v1/ws/validate?api_key=…` |
+| Audit trace | `GET` | `/v1/audit/trace?claim_id=` |
+| Audit verify | `GET` | `/v1/audit/verify` |
+| HITL route | `POST` | `/v1/reviews/route` |
+| HITL decision | `POST` | `/v1/reviews/decisions` (reviewer key) |
 | Rules | `GET` | `/v1/rules` |
 | Policy | `GET` | `/v1/policies/{policy_id}` |
 

@@ -7,6 +7,7 @@ from app.routers import (
     analysis,
     audit,
     auth,
+    benchmark,
     claims,
     dashboard,
     findings,
@@ -14,7 +15,10 @@ from app.routers import (
     metrics,
     reviews,
     rules_catalog,
+    security_info,
+    streaming,
     validation,
+    validation_audit,
 )
 
 app = FastAPI(title="ClaimGuard AI API", version="0.1.0")
@@ -33,6 +37,10 @@ app.include_router(auth.router)
 app.include_router(validation.router)
 app.include_router(rules_catalog.router)
 app.include_router(reviews.router)
+app.include_router(validation_audit.router)
+app.include_router(streaming.router)
+app.include_router(benchmark.router)
+app.include_router(security_info.router)
 
 # Legacy CSV/FHIR ingest + evaluate (API key enforced on full app only)
 app.include_router(claims.router, dependencies=[Depends(require_api_key)])

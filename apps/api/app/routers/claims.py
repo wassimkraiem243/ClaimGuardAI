@@ -8,11 +8,13 @@ from fastapi import APIRouter, File, HTTPException, UploadFile
 from fastapi.responses import JSONResponse
 from pydantic import BaseModel
 
+from app.config import settings
 from app.domain.claim_package import ClaimPackage, IngestionRejected
 from app.domain.claim_repository import ClaimConflict
 from app.domain.finding import ValidationFinding
 from app.domain.normalized_claim import NormalizedClaim
 from app.infrastructure.audit.factory import get_audit_log
+from app.infrastructure import audit_log as pack_audit
 from app.infrastructure.parsers.csv_parser import CsvClaimParser
 from app.infrastructure.parsers.fhir_parser import FhirClaimParser
 from app.infrastructure.parsers.preflight import InputRejected, check_fhir, prepare_csv, reject_duplicate_ids
@@ -105,11 +107,31 @@ async def ingest(file: UploadFile = File(...)):
     raw = await file.read(MAX_BYTES + 1)
     if len(raw) > MAX_BYTES:
         raise HTTPException(413, "File too large")
+    log = str(settings.resolved_audit_log())
+    name = file.filename or "upload"
+    digest = hashlib.sha256(raw).hexdigest()
     try:
-        return ingest_upload(file.filename, raw)
+        if settings.audit_enabled:
+            pack_audit.append(
+                log,
+                [
+                    {
+                        "type": "FILE_RECEIVED",
+                        "file_role": "claims_upload",
+                        "file_name": name,
+                        "size_bytes": len(raw),
+                        "sha256": digest,
+                    }
+                ],
+            )
+        return ingest_upload(name, raw)
     except ValueError as e:
+        if settings.audit_enabled:
+            pack_audit.log_ingestion_error("api:/claims/ingest", str(e), log=log)
         raise HTTPException(415, str(e)) from e
     except IngestionRejected as e:
+        if settings.audit_enabled:
+            pack_audit.log_ingestion_error("api:/claims/ingest", e.reason, log=log)
         raise HTTPException(400, detail=e.to_dict()) from e
 
 

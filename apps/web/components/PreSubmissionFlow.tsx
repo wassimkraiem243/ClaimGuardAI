@@ -4,12 +4,17 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Card, StatCard } from './Card';
 import { PageHeader } from './PageHeader';
 import { RuleStatusBadge } from './RuleStatusBadge';
+import { HumanReviewPanel } from './HumanReviewPanel';
+import { AuditTrailPanel } from './AuditTrailPanel';
 import {
   fetchPolicy,
   fetchRuleCatalog,
   ingestClaimFile,
+  routeReview,
   validateClaimEnvelope,
+  validateClaimStreaming,
   type NormalizedClaim,
+  type RouteReviewResponse,
   type RuleCatalogEntry,
   type RuleResultRow,
   type ValidationResponse,
@@ -21,7 +26,7 @@ const STEPS: { id: FlowStep; label: string; hint: string }[] = [
   { id: 'ingest', label: 'Upload claim', hint: 'JSONL, ZIP, FHIR, or legacy CSV' },
   { id: 'review', label: 'Review envelope', hint: 'Confirm normalized claim data' },
   { id: 'validate', label: 'Run rules', hint: '15 payer pre-submission checks' },
-  { id: 'results', label: 'Review results', hint: 'Fix issues before submission' },
+  { id: 'results', label: 'Review results', hint: 'Evidence, severity, corrective actions' },
 ];
 
 function statusCounts(results: RuleResultRow[]) {
@@ -148,6 +153,10 @@ export function PreSubmissionFlow() {
   const [pasteJson, setPasteJson] = useState('');
   const [ingestMode, setIngestMode] = useState<'file' | 'paste'>('file');
   const [validation, setValidation] = useState<ValidationResponse | null>(null);
+  const [routing, setRouting] = useState<RouteReviewResponse | null>(null);
+  const [auditRefresh, setAuditRefresh] = useState(0);
+  const [streamRulesDone, setStreamRulesDone] = useState(0);
+  const [useStreaming, setUseStreaming] = useState(true);
   const [rules, setRules] = useState<RuleCatalogEntry[] | null>(null);
   const [policyPreview, setPolicyPreview] = useState<string | null>(null);
   const [busy, setBusy] = useState<string | null>(null);
@@ -160,6 +169,14 @@ export function PreSubmissionFlow() {
   const envelope = selected?.envelope ?? null;
   const activeStep = resolveActiveStep(claims.length, envelope, validation);
   const activeIdx = stepIndex(activeStep);
+
+  const resultsByRule = useMemo(() => {
+    const map = new Map<string, RuleResultRow>();
+    if (validation) {
+      for (const r of validation.results) map.set(r.rule_id, r);
+    }
+    return map;
+  }, [validation]);
 
   const ruleTitleById = useMemo(() => {
     const map = new Map<string, string>();
@@ -214,6 +231,7 @@ export function PreSubmissionFlow() {
     if (!file) return;
     setError(null);
     setValidation(null);
+    setRouting(null);
     setPolicyPreview(null);
     setBusy('Normalizing your claim…');
     try {
@@ -232,6 +250,7 @@ export function PreSubmissionFlow() {
   async function onPasteIngest() {
     setError(null);
     setValidation(null);
+    setRouting(null);
     setPolicyPreview(null);
     setBusy('Parsing pasted JSON…');
     try {
@@ -248,26 +267,51 @@ export function PreSubmissionFlow() {
     }
   }
 
+  async function finishValidation(resp: ValidationResponse) {
+    setValidation(resp);
+    setStreamRulesDone(15);
+    const pid = resp.run.policy_id;
+    if (pid) {
+      const pol = await fetchPolicy(pid);
+      setPolicyPreview(JSON.stringify(pol, null, 2));
+    }
+    try {
+      setRouting(await routeReview(envelope!));
+    } catch {
+      setRouting(null);
+    }
+    setAuditRefresh((n) => n + 1);
+    window.requestAnimationFrame(() => scrollToResults());
+  }
+
   async function onValidate() {
     if (!envelope) {
       setError('Upload or paste a claim first.');
       return;
     }
     setError(null);
+    setRouting(null);
+    setStreamRulesDone(0);
     setBusy('Running payer rules R001–R015…');
     setPolicyPreview(null);
     try {
-      const resp = await validateClaimEnvelope(envelope);
-      setValidation(resp);
-      const pid = resp.run.policy_id;
-      if (pid) {
-        const pol = await fetchPolicy(pid);
-        setPolicyPreview(JSON.stringify(pol, null, 2));
+      if (useStreaming && typeof WebSocket !== 'undefined') {
+        await new Promise<void>((resolve, reject) => {
+          validateClaimStreaming(envelope, {
+            onRule: () => setStreamRulesDone((n) => n + 1),
+            onComplete: (resp) => {
+              finishValidation(resp).then(resolve).catch(reject);
+            },
+            onError: (msg) => reject(new Error(msg)),
+          });
+        });
+      } else {
+        await finishValidation(await validateClaimEnvelope(envelope));
       }
-      window.requestAnimationFrame(() => scrollToResults());
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Validation failed');
       setValidation(null);
+      setRouting(null);
     } finally {
       setBusy(null);
     }
@@ -278,9 +322,11 @@ export function PreSubmissionFlow() {
     setSelectedIdx(0);
     setPasteJson('');
     setValidation(null);
+    setRouting(null);
     setPolicyPreview(null);
     setError(null);
     setResultFilter('issues');
+    setStreamRulesDone(0);
   }
 
   return (
@@ -577,6 +623,21 @@ export function PreSubmissionFlow() {
             </PrimaryButton>
           </div>
 
+          <label className="mt-4 flex items-center gap-2 text-sm text-text-muted">
+            <input
+              type="checkbox"
+              checked={useStreaming}
+              onChange={(e) => setUseStreaming(e.target.checked)}
+              className="rounded border-border"
+            />
+            Stream rule results over WebSocket (real-time progress)
+          </label>
+          {busy && useStreaming && (
+            <p className="mt-2 text-xs text-primary">
+              Rules completed: {streamRulesDone} / 15
+            </p>
+          )}
+
           {rules && rules.length > 0 && (
             <p className="mt-4 text-xs text-text-faint">
               {rules.length} rules loaded from catalog.{' '}
@@ -694,7 +755,9 @@ export function PreSubmissionFlow() {
                           <tr className="bg-surface-muted text-xs font-medium text-text-faint">
                             <th className="px-5 py-3">Rule</th>
                             <th className="px-5 py-3">Status</th>
+                            <th className="px-5 py-3">Severity</th>
                             <th className="px-5 py-3">Explanation</th>
+                            <th className="px-5 py-3">Evidence</th>
                           </tr>
                         </thead>
                         <tbody>
@@ -723,12 +786,32 @@ export function PreSubmissionFlow() {
                                   )}
                                 </div>
                               </td>
+                              <td className="px-5 py-4 text-xs capitalize text-text-muted">{r.severity}</td>
                               <td className="max-w-md px-5 py-4 text-text-muted">
                                 <p>{r.explanation}</p>
                                 {r.corrective_action && (
                                   <p className="mt-2 text-xs text-text-faint">
                                     <span className="font-medium text-text">Fix:</span>{' '}
                                     {r.corrective_action}
+                                  </p>
+                                )}
+                              </td>
+                              <td className="max-w-xs px-5 py-4 font-mono text-[10px] text-text-faint">
+                                {r.evidence && r.evidence.length > 0 ? (
+                                  <details>
+                                    <summary className="cursor-pointer text-primary">
+                                      {r.evidence.length} path(s)
+                                    </summary>
+                                    <pre className="mt-1 max-h-24 overflow-auto whitespace-pre-wrap scrollbar-subtle">
+                                      {JSON.stringify(r.evidence, null, 2)}
+                                    </pre>
+                                  </details>
+                                ) : (
+                                  '—'
+                                )}
+                                {r.confidence != null && (
+                                  <p className="mt-1 text-text-muted">
+                                    conf: {(r.confidence * 100).toFixed(0)}%
                                   </p>
                                 )}
                               </td>
@@ -740,6 +823,13 @@ export function PreSubmissionFlow() {
                   )}
                 </div>
 
+                {routing?.escalation_required && (
+                  <p className="mt-4 text-sm">
+                    <a href="#human-review" className="font-medium text-primary hover:underline">
+                      Jump to human review queue ↓
+                    </a>
+                  </p>
+                )}
                 {policyPreview && (
                   <details className="rounded-2xl border border-border">
                     <summary className="cursor-pointer px-4 py-3 text-sm font-medium">
@@ -754,6 +844,17 @@ export function PreSubmissionFlow() {
             )}
           </Card>
         </div>
+
+        <HumanReviewPanel
+          routing={routing}
+          resultsByRule={resultsByRule}
+          onDecisionRecorded={() => setAuditRefresh((n) => n + 1)}
+        />
+
+        <AuditTrailPanel
+          claimId={validation?.claim_id ?? (envelope ? String(envelope.claim_id) : null)}
+          refreshToken={auditRefresh}
+        />
 
         {/* Rule catalog reference */}
         <div id="rule-catalog-panel">

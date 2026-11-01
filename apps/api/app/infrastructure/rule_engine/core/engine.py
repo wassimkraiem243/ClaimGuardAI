@@ -3,7 +3,7 @@ from __future__ import annotations
 import time
 import uuid
 from datetime import datetime, timezone
-from typing import Optional
+from typing import Callable, Optional
 
 from pydantic import ValidationError
 
@@ -37,22 +37,35 @@ def check_envelope(raw: object) -> dict:
     return raw
 
 
-def evaluate_claim(raw: dict, store: PolicyStore,
-                   policy_override: Optional[Policy] = None) -> list[RuleResult]:
+def evaluate_claim(
+    raw: dict,
+    store: PolicyStore,
+    policy_override: Optional[Policy] = None,
+    on_rule: Optional[Callable[[RuleResult], None]] = None,
+) -> list[RuleResult]:
     """Exactly 15 results, one per rule, in R001..R015 order."""
     check_envelope(raw)
     policy = policy_override or store.get(raw["policy_id"])
     ctx = ClaimContext(raw=raw, policy=policy, store=store)
-    results = [fn(ctx) for fn in RULES.values()]
+    results: list[RuleResult] = []
+    for fn in RULES.values():
+        row = fn(ctx)
+        results.append(row)
+        if on_rule is not None:
+            on_rule(row)
     assert len(results) == 15 and all(r.status != Status.NOT_IMPLEMENTED for r in results)
     return results
 
 
-def validate_claim(raw: dict, store: PolicyStore,
-                   policy_override: Optional[Policy] = None,
-                   run_id: Optional[str] = None) -> ValidationResponse:
+def validate_claim(
+    raw: dict,
+    store: PolicyStore,
+    policy_override: Optional[Policy] = None,
+    run_id: Optional[str] = None,
+    on_rule: Optional[Callable[[RuleResult], None]] = None,
+) -> ValidationResponse:
     started, t0 = datetime.now(timezone.utc), time.perf_counter()
-    results = evaluate_claim(raw, store, policy_override)
+    results = evaluate_claim(raw, store, policy_override, on_rule=on_rule)
     policy = policy_override or store.get(raw["policy_id"])
     run = RunMetadata(
         run_id=run_id or str(uuid.uuid4()), input_hash=input_hash(raw), engine_version=ENGINE_VERSION,

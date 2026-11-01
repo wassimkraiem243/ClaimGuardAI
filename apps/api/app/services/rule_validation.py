@@ -1,13 +1,13 @@
 import os
 from functools import lru_cache
-from typing import Any, Optional
+from typing import Any, Callable, Optional
 
 from app.config import settings
 from app.infrastructure.rule_engine.audit_hook import AuditError, audited_validate
 from app.infrastructure.rule_engine.config import MAX_BATCH
 from app.infrastructure.rule_engine.core.engine import IngestionError
 from app.infrastructure.rule_engine.domain.policy import Policy
-from app.infrastructure.rule_engine.domain.result import ValidationResponse
+from app.infrastructure.rule_engine.domain.result import RuleResult, ValidationResponse
 from app.infrastructure.rule_engine.schemas import BatchResponse, IngestionErrorItem
 from app.infrastructure.rule_engine.stores.policy_store import PolicyStore
 
@@ -27,6 +27,7 @@ def validate_envelope(
     claim: dict[str, Any],
     policy_override: Optional[Policy] = None,
     previous_run: Optional[tuple[str, str]] = None,
+    on_rule: Optional[Callable[[RuleResult], None]] = None,
 ) -> ValidationResponse:
     _apply_audit_env()
     store = get_policy_store()
@@ -36,6 +37,7 @@ def validate_envelope(
         policy_override,
         source="api:/v1/validate",
         previous_run=previous_run,
+        on_rule=on_rule,
     )
 
 
