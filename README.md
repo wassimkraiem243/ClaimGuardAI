@@ -47,6 +47,9 @@ npm run dev
 | API (OpenAPI) | http://localhost:4001/docs |
 | Pre-submission flow | http://localhost:4000/ |
 | Audit & feedback | http://localhost:4000/audit |
+| AI findings (JWT demo) | http://localhost:4000/findings |
+
+**Jury demo script:** [docs/SHOWCASE.md](docs/SHOWCASE.md)
 
 Copy `apps/web/.env.example` to `apps/web/.env.local` and set `NEXT_PUBLIC_REVIEWER_API_KEY=reviewer-dev-key` to enable override buttons in the UI.
 

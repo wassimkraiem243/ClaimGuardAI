@@ -8,7 +8,6 @@ const NAV_ITEMS = [
   {
     href: '/',
     label: 'Validate claim',
-    section: 'Phase 1 & 3',
     icon: (
       <svg width="20" height="20" viewBox="0 0 20 20" fill="none" aria-hidden="true">
         <path
@@ -23,8 +22,7 @@ const NAV_ITEMS = [
   },
   {
     href: '/audit',
-    label: 'Audit trail',
-    section: 'Phase 1',
+    label: 'Audit & export',
     icon: (
       <svg width="20" height="20" viewBox="0 0 20 20" fill="none" aria-hidden="true">
         <path d="M4 4h12v12H4V4z" stroke="currentColor" strokeWidth="1.5" strokeLinejoin="round" />
@@ -35,7 +33,6 @@ const NAV_ITEMS = [
   {
     href: '/evaluation',
     label: 'Benchmark metrics',
-    section: 'Phase 2',
     icon: (
       <svg width="20" height="20" viewBox="0 0 20 20" fill="none" aria-hidden="true">
         <path d="M4 14V8M8 14V4M12 14v-6M16 14v-3" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
@@ -43,24 +40,23 @@ const NAV_ITEMS = [
     ),
   },
   {
-    href: '/security',
-    label: 'Privacy & security',
-    section: 'Phase 2',
+    href: '/findings',
+    label: 'AI findings (demo)',
     icon: (
       <svg width="20" height="20" viewBox="0 0 20 20" fill="none" aria-hidden="true">
         <path
-          d="M10 3l6 3v5c0 4-2.5 6.5-6 8-3.5-1.5-6-4-6-8V6l6-3z"
+          d="M10 4a4 4 0 00-4 4v1H5a2 2 0 00-2 2v3h14v-3a2 2 0 00-2-2h-1V8a4 4 0 00-4-4z"
           stroke="currentColor"
           strokeWidth="1.5"
           strokeLinejoin="round"
         />
+        <path d="M8 14h4" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
       </svg>
     ),
   },
   {
     href: '/guides',
     label: 'Architecture docs',
-    section: 'Deliverables',
     icon: (
       <svg width="20" height="20" viewBox="0 0 20 20" fill="none" aria-hidden="true">
         <path d="M6 4h8v12H6V4z" stroke="currentColor" strokeWidth="1.5" />
@@ -89,33 +85,25 @@ export function Sidebar() {
 
   const navContent = (
     <nav className="flex flex-col gap-1 px-3" aria-label="Main">
-      {NAV_ITEMS.map((item, index) => {
-        const showSection =
-          index === 0 || NAV_ITEMS[index - 1]?.section !== item.section;
+      {NAV_ITEMS.map((item) => {
         const active =
           pathname === item.href ||
           (item.href === '/' && pathname === '/phase1') ||
           (item.href !== '/' && pathname.startsWith(item.href));
         return (
-          <div key={item.href}>
-            {showSection && (
-              <p className="mb-1 mt-3 px-3 text-[10px] font-semibold uppercase tracking-wide text-white/45 first:mt-0">
-                {item.section}
-              </p>
-            )}
-            <Link
-              href={item.href}
-              aria-current={active ? 'page' : undefined}
-              className={`flex items-center gap-3 rounded-2xl px-3 py-2.5 text-sm font-medium transition-all ${
-                active
-                  ? 'bg-white/20 text-on-primary shadow-sm'
-                  : 'text-white/70 hover:bg-white/10 hover:text-on-primary'
-              }`}
-            >
-              {item.icon}
-              <span>{item.label}</span>
-            </Link>
-          </div>
+          <Link
+            key={item.href}
+            href={item.href}
+            aria-current={active ? 'page' : undefined}
+            className={`flex items-center gap-3 rounded-2xl px-3 py-2.5 text-sm font-medium transition-all ${
+              active
+                ? 'bg-white/20 text-on-primary shadow-sm'
+                : 'text-white/70 hover:bg-white/10 hover:text-on-primary'
+            }`}
+          >
+            {item.icon}
+            <span>{item.label}</span>
+          </Link>
         );
       })}
     </nav>

@@ -1,5 +1,6 @@
 'use client';
 
+import Link from 'next/link';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Card, StatCard } from './Card';
 import { PageHeader } from './PageHeader';
@@ -864,6 +865,30 @@ export function PreSubmissionFlow() {
           claimId={validation?.claim_id ?? (envelope ? String(envelope.claim_id) : null)}
           refreshToken={auditRefresh}
         />
+
+        <Card className="border-primary/20 bg-surface-muted/50">
+          <h2 className="text-sm font-semibold text-text">Demo shortcuts for the jury</h2>
+          <ul className="mt-2 space-y-1 text-sm text-text-muted">
+            <li>
+              <Link href="/audit" className="font-medium text-primary hover:underline">
+                Audit &amp; active-learning export
+              </Link>{' '}
+              — verify hash chain, download reviewer overrides (JSON/CSV).
+            </li>
+            <li>
+              <Link href="/findings" className="font-medium text-primary hover:underline">
+                AI findings dashboard
+              </Link>{' '}
+              — JWT sign-in, seeded rule findings, optional Ollama explanations.
+            </li>
+            <li>
+              <Link href="/evaluation" className="font-medium text-primary hover:underline">
+                Benchmark metrics
+              </Link>{' '}
+              — Phase 2 evaluation splits (F1, latency).
+            </li>
+          </ul>
+        </Card>
 
         {/* Rule catalog reference */}
         <div id="rule-catalog-panel">
