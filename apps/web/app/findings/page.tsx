@@ -6,7 +6,6 @@ import { PageHeader } from '../../components/PageHeader';
 import {
   clearStoredToken,
   fetchDashboardFindings,
-  fetchFindingAnalysis,
   getStoredToken,
   loginAnalyst,
   runFindingAnalysis,
@@ -65,6 +64,7 @@ export default function FindingsPage() {
 
   async function onAnalyze(id: string) {
     setBusyId(id);
+    setLoadError(null);
     try {
       const result = await runFindingAnalysis(id);
       setAnalysisById((prev) => ({ ...prev, [id]: result }));
@@ -72,15 +72,6 @@ export default function FindingsPage() {
       setLoadError(e instanceof Error ? e.message : 'Analysis failed');
     } finally {
       setBusyId(null);
-    }
-  }
-
-  async function onShowCached(id: string) {
-    try {
-      const cached = await fetchFindingAnalysis(id);
-      if (cached) setAnalysisById((prev) => ({ ...prev, [id]: cached }));
-    } catch {
-      /* ignore */
     }
   }
 
@@ -166,23 +157,14 @@ export default function FindingsPage() {
                           {f.ruleId} · {f.severity} · {f.detectedAt.slice(0, 10)}
                         </p>
                       </div>
-                      <div className="flex gap-2">
-                        <button
-                          type="button"
-                          disabled={busyId === f.id}
-                          onClick={() => onAnalyze(f.id)}
-                          className="rounded-xl bg-primary px-3 py-1.5 text-xs font-medium text-on-primary disabled:opacity-50"
-                        >
-                          {busyId === f.id ? 'Analyzing…' : 'Run AI explain'}
-                        </button>
-                        <button
-                          type="button"
-                          onClick={() => onShowCached(f.id)}
-                          className="rounded-xl bg-surface px-3 py-1.5 text-xs shadow-float"
-                        >
-                          Load saved
-                        </button>
-                      </div>
+                      <button
+                        type="button"
+                        disabled={busyId === f.id}
+                        onClick={() => onAnalyze(f.id)}
+                        className="rounded-xl bg-primary px-3 py-1.5 text-xs font-medium text-on-primary disabled:opacity-50"
+                      >
+                        {busyId === f.id ? 'Analyzing…' : 'Run AI explain'}
+                      </button>
                     </div>
                     {f.description && (
                       <p className="mt-2 text-sm text-text-muted">{f.description}</p>

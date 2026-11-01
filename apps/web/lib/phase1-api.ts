@@ -1,25 +1,13 @@
 const DEFAULT_API_ORIGIN = 'http://127.0.0.1:4001';
 
 function resolveApiBase(): string {
+  // Browser always uses Next.js rewrite (/api → API). Avoids CORS and localhost vs 127.0.0.1 mismatches.
+  if (typeof window !== 'undefined') return '/api';
+
   const env = process.env.NEXT_PUBLIC_API_URL?.trim();
   if (env) {
-    const base = env.replace(/\/$/, '');
-    try {
-      const u = new URL(base);
-      const local = u.hostname === 'localhost' || u.hostname === '127.0.0.1';
-      if (local && u.port && u.port !== '4001') {
-        console.warn(
-          `[ClaimGuard] NEXT_PUBLIC_API_URL is ${base} but the API runs on port 4001. ` +
-            'Using /api proxy instead — fix apps/web/.env.local (clear NEXT_PUBLIC_API_URL or set http://127.0.0.1:4001).',
-        );
-        if (typeof window !== 'undefined') return '/api';
-      }
-    } catch {
-      /* relative or non-URL value */
-    }
-    return base;
+    return env.replace(/\/$/, '');
   }
-  if (typeof window !== 'undefined') return '/api';
   return DEFAULT_API_ORIGIN;
 }
 
@@ -173,7 +161,7 @@ export async function ingestClaimFile(file: File): Promise<NormalizedClaim[]> {
     const hint =
       networkErr instanceof Error ? networkErr.message : String(networkErr);
     throw new Error(
-      `Cannot reach the API (${API_BASE_URL}). Start the backend with npm run dev:api from the repo root. ${hint}`,
+      `Cannot reach the API via /api proxy. Ensure npm run dev is running (web :4000, API :4001). ${hint}`,
     );
   }
   if (!response.ok) {
