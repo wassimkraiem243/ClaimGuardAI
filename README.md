@@ -29,8 +29,9 @@ python -m venv .venv
 # macOS/Linux:
 # source .venv/bin/activate
 
-pip install -r requirements.txt
 copy .env.example .env
+docker compose up -d
+pip install -r requirements.txt
 python scripts/apply_migrations.py
 python scripts/seed.py
 cd ../..
