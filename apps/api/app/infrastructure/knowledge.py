@@ -12,11 +12,12 @@ class KnowledgeRetriever:
     async def retrieve(self, query: str, category: str, top_k: int) -> list[str]:
         embedding = await self._ollama.embed(query)
         vector_literal = f"[{','.join(str(x) for x in embedding)}]"
+        # CAST(...) — do not use :vector::vector; psycopg misparses the :: cast suffix.
         stmt = text(
             """
             SELECT content FROM "KnowledgeChunk"
             WHERE category = :category
-            ORDER BY embedding <=> :vector::vector
+            ORDER BY embedding <=> CAST(:vector AS vector)
             LIMIT :limit
             """
         )

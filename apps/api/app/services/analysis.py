@@ -3,6 +3,7 @@ import uuid
 from datetime import datetime, timezone
 
 from fastapi import HTTPException
+from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.orm import Session
 
 from app.config import settings
@@ -33,9 +34,12 @@ async def enrich_finding(db: Session, ai_finding: dict) -> dict:
         ]
         if x
     )
-    chunks = await retriever.retrieve(query, category, 3)
-    if not chunks:
-        chunks = await retriever.retrieve(query, DEFAULT_RAG_CATEGORY, 2)
+    try:
+        chunks = await retriever.retrieve(query, category, 3)
+        if not chunks:
+            chunks = await retriever.retrieve(query, DEFAULT_RAG_CATEGORY, 2)
+    except SQLAlchemyError:
+        chunks = []
     if chunks:
         return {
             **ai_finding,
