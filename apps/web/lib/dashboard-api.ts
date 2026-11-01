@@ -41,9 +41,9 @@ export async function loginAnalyst(username: string, password: string): Promise<
         'Database unavailable. Run: docker compose up -d, then python scripts/apply_migrations.py and scripts/seed.py',
       );
     }
-    if (text.includes('jwt_not_configured') || text.includes('CLAIMGUARD_JWT_SECRET')) {
+    if (text.includes('"jwt_not_configured"')) {
       throw new Error(
-        'Set CLAIMGUARD_JWT_SECRET (32+ characters) in apps/api/.env and restart npm run dev.',
+        'JWT secret not loaded. Put CLAIMGUARD_JWT_SECRET (32+ chars) in apps/api/.env, sync latest code, restart npm run dev.',
       );
     }
     throw new Error(text.includes('detail') ? 'Invalid username or password' : text.slice(0, 200));

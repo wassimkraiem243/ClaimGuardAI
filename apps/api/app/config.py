@@ -1,9 +1,13 @@
 from pathlib import Path
 
+from dotenv import load_dotenv
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 _REPO_ROOT = Path(__file__).resolve().parents[3]
 _API_ROOT = Path(__file__).resolve().parents[1]
+
+# Always load apps/api/.env into os.environ (uvicorn/npm do not do this automatically).
+load_dotenv(_API_ROOT / ".env", override=False)
 
 
 class Settings(BaseSettings):
