@@ -9,7 +9,55 @@ from sqlalchemy import (
     Text,
     UniqueConstraint,
 )
+from sqlalchemy.dialects.postgresql import ENUM
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column, relationship
+
+# Match existing PostgreSQL enums (create_type=False — created by SQL migrations).
+PIPELINE_RUN_STATUS = ENUM(
+    "PENDING",
+    "RUNNING",
+    "SUCCESS",
+    "FAILED",
+    "CANCELLED",
+    name="PipelineRunStatus",
+    create_type=False,
+)
+SCAN_TOOL = ENUM(
+    "GITLEAKS",
+    "SEMGREP",
+    "TRIVY",
+    "OWASP_ZAP",
+    name="ScanTool",
+    create_type=False,
+)
+SCAN_EXECUTION_STATUS = ENUM(
+    "PENDING",
+    "RUNNING",
+    "SUCCESS",
+    "FAILED",
+    "SKIPPED",
+    name="ScanExecutionStatus",
+    create_type=False,
+)
+SEVERITY = ENUM(
+    "CRITICAL",
+    "HIGH",
+    "MEDIUM",
+    "LOW",
+    "INFO",
+    "UNKNOWN",
+    name="Severity",
+    create_type=False,
+)
+FINDING_CATEGORY = ENUM(
+    "SECRET",
+    "SAST",
+    "SCA",
+    "CONTAINER",
+    "DAST",
+    name="FindingCategory",
+    create_type=False,
+)
 
 
 class Base(DeclarativeBase):
@@ -38,7 +86,7 @@ class PipelineRun(Base):
     externalId: Mapped[str | None] = mapped_column(String, nullable=True)
     branch: Mapped[str | None] = mapped_column(String, nullable=True)
     commitSha: Mapped[str | None] = mapped_column(String, nullable=True)
-    status: Mapped[str] = mapped_column(String)
+    status: Mapped[str] = mapped_column(PIPELINE_RUN_STATUS)
     startedAt: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
     finishedAt: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
     createdAt: Mapped[datetime] = mapped_column(DateTime)
@@ -58,9 +106,9 @@ class ScanExecution(Base):
     pipelineRunId: Mapped[str] = mapped_column(
         ForeignKey("PipelineRun.id", ondelete="CASCADE")
     )
-    tool: Mapped[str] = mapped_column(String)
+    tool: Mapped[str] = mapped_column(SCAN_TOOL)
     scanLabel: Mapped[str] = mapped_column(String, default="default")
-    status: Mapped[str] = mapped_column(String)
+    status: Mapped[str] = mapped_column(SCAN_EXECUTION_STATUS)
     rawReportPath: Mapped[str | None] = mapped_column(String, nullable=True)
     startedAt: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
     finishedAt: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
@@ -82,8 +130,8 @@ class Finding(Base):
     fingerprint: Mapped[str] = mapped_column(String)
     title: Mapped[str] = mapped_column(String)
     description: Mapped[str | None] = mapped_column(Text, nullable=True)
-    severity: Mapped[str] = mapped_column(String)
-    category: Mapped[str | None] = mapped_column(String, nullable=True)
+    severity: Mapped[str] = mapped_column(SEVERITY)
+    category: Mapped[str | None] = mapped_column(FINDING_CATEGORY, nullable=True)
     rawSeverity: Mapped[str | None] = mapped_column(String, nullable=True)
     ruleId: Mapped[str | None] = mapped_column(String, nullable=True)
     filePath: Mapped[str | None] = mapped_column(String, nullable=True)
